@@ -17,17 +17,24 @@ const Login = () => {
         headers:{'Content-Type':'Application/json'},
         credentials:'include',
       });
+      const data = await response.json(); // Parse response body as JSON
       if(response.ok){
-        const data = await response.json(); // Parse response body as JSON
         alert('Login Successful');
         setRedirect(true);
         setUser(data.user); // Assuming the user data is in the 'user' property of the parsed JSON
-
+        // Store the JWT token in localStorage
+        localStorage.setItem('token', data.token);
       }
       else{
-        alert('Wrong Credentials');
+        // Handle login failure
+        if (data.error) {
+          alert(`Login Failed: ${data.error}`);
+        } else {
+          alert('Login Failed');
+        }
       }
     }
+    
     if(redirect){
       return <Navigate to = {'/chat'}/>
     }

@@ -1,4 +1,5 @@
 import React, { useEffect, useContext, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import arrow from "../../assets/arrow.png";
 import logo from "../../assets/logo.png";
@@ -9,9 +10,15 @@ import { UserContext } from "../../UserContextProvider";
 const ChatPage = () => {
   const { user, setUser } = useContext(UserContext);
   const userRef = useRef(user);
+  const navigate = useNavigate();
+  let socket = io("http://localhost:8000");
 
   useEffect(() => {
-    const socket = io("http://localhost:8000");
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+    }
+
     const form = document.getElementById("send-container");
     const messageInput = document.getElementById("messageInp");
     const messageContainer = document.querySelector(".container");
@@ -38,10 +45,9 @@ const ChatPage = () => {
         const data = await response.json();
         console.log("Response data from server:", data);
         if (data && data.firstName) {
-          // Check if data and data.first_name are not null
           firstName = data.firstName;
           console.log("First name after fetch:", firstName);
-          setUser({ firstName, email }); // Update the state here
+          setUser({ firstName, email });
         } else {
           console.log("First name not available in response data");
         }
@@ -85,33 +91,30 @@ const ChatPage = () => {
       console.log("fetchUser end");
     };
     
-
-    // console.log(user)
     fetchUser();
 
     const append = (message, position) => {
       const messageElement = document.createElement("div");
-      const date = new Date(); // Get current date/time
-      const timestamp = `${date.getHours()}:${date.getMinutes()}`; // Format: HH:MM
+      const date = new Date();
+      const timestamp = `${date.getHours()}:${date.getMinutes()}`;
       messageElement.innerHTML = `<span class="timestamp">${timestamp}</span>${message}`;
       messageElement.classList.add("message");
       messageElement.classList.add(position);
       messageContainer.append(messageElement);
     };
 
-    
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  console.log('form submitted')
-  const message = messageInput.value;
-  if (user && user.firstName) { // Check if the user's name is defined
-    append(`You: ${message}`, "right");
-    socket.emit("send", message);
-    messageInput.value = "";
-  } else {
-    console.log("User's name is not defined yet");
-  }
-});
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      console.log('form submitted')
+      const message = messageInput.value;
+      if (user && user.firstName) {
+        append(`You: ${message}`, "right");
+        socket.emit("send", message);
+        messageInput.value = "";
+      } else {
+        console.log("User's name is not defined yet");
+      }
+    });
 
     socket.on("user-joined", (data) => {
       append(`${data.firstName} joined the chat`, "left");
@@ -124,16 +127,25 @@ form.addEventListener("submit", (e) => {
     socket.on("left", (name) => {
       append(`${name.firstName} left the chat`, "left");
     });
-    // console.log(user)
-
-    
   }, []);
+
+  const handleLogout = () => {
+    socket.emit('logout', { firstName: user.firstName }, () => {
+        localStorage.removeItem('token');
+        navigate('/login');
+    });
+  };
 
   return (
     <div className="wrapper">
       <nav>
+        <div className="wrapperAnon">
         <img class="logo" src={logo} alt="" />
         <h2 id="h2">Anonymous Chat</h2>
+        </div>
+        <div className="btnWrapper">
+        <button className="logoutBtn" onClick={handleLogout}>Logout</button>
+        </div>
       </nav>
 
       <div class="container"></div>

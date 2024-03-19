@@ -20,9 +20,25 @@ export const UserContextProvider = ({ children }) => {
 
   useEffect(() => {
     if (!loading) {
-      setUser(user);
+      // Fetch user data from server using the JWT token
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch('http://localhost:9000/name', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.firstName) {
+            setUser({ firstName: data.firstName, email: data.email });
+          }
+        });
+      }
     }
-  }, [user, loading]);
+  }, [loading]);
 
   useEffect(() => {
     setLoading(false);

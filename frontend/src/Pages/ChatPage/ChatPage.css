@@ -3,10 +3,29 @@ body{
 }
 nav{
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: flex-start;
     align-items: center;
     padding: 8px;
+}
+.wrapperAnon{
+    display: flex;
+    flex-direction: column;
+    margin-left: auto;
+}
+.btnWrapper{
+    margin-left: auto;
+}
+.logoutBtn{
+    padding: 10px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: none;
+    background-color: #18205d;
+    color: white;
+}
+.logoutBtn:hover{
+    background-color: #18205db6;
 }
 #h2{
     color: white;
@@ -38,6 +57,9 @@ nav{
     color: white;
     word-wrap: break-word; /* Break long words */
     white-space: pre-line; /* Preserve line breaks */
+}
+.container::-webkit-scrollbar{
+    display: none;
 }
 .message:hover .timestamp{
     display: block;
@@ -96,4 +118,7 @@ input:focus{
     color: rgba(255, 255, 255, 0.7);
     float: right;
     display: none;
+}
+.logoutBtn{
+    
 }

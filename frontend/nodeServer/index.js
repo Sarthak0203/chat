@@ -13,12 +13,24 @@ io.on('connection', socket=>{
         socket.broadcast.emit('user-joined',name);
     });
     socket.on('send', message => {
-        if (users[socket.id] && users[socket.id].firstName) {
-          socket.broadcast.emit('receive', {message: message, firstName: users[socket.id].firstName})
+        if (users[socket.id]) {
+          let user = users[socket.id];
+          if (user && user.firstName) {
+            socket.broadcast.emit('receive', {message: message, firstName: user.firstName})
+          }
         }
-      })
-    socket.on('disconnect',message=>{
-        socket.broadcast.emit('left', users[socket.id])
+    });
+    socket.on('disconnect', () => {
+        if (users[socket.id]) {
+            socket.broadcast.emit('left', users[socket.id]);
+            delete users[socket.id];
+        }
+    });
+    
+    socket.on('logout', (user, ack) => {
+        socket.broadcast.emit('left', user);
         delete users[socket.id];
-    })
+        ack();
+    });
+    
 }) 
