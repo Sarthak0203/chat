@@ -1,0 +1,5 @@
+  // .then((firstName) => {
+  //   if (firstName) {
+  //     socket.emit('new-user-joined', { firstName }); // Send an object with firstName property
+  //   }
+  // });
