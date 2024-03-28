@@ -11,9 +11,10 @@ const user = require('./Models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-const secret = 'asdfasdfasdfasdfasdf';
+const secret = process.env.secret;
+require('dotenv').config()
 
-mongoose.connect('mongodb://localhost:27017/ChatApp')
+mongoose.connect(process.env.MongoURL)
   .then(() => console.log('Database connected successfully'))
   .catch(err => console.log('Database connection failed', err));
 
