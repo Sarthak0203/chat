@@ -4,7 +4,7 @@ const cors = require('cors');
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: 'https://anonochat.vercel.app/',
+  origin: 'https://anonochat.vercel.app',
   credentials: true
 }));
 const user = require('./Models/User');
