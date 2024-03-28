@@ -1,14 +1,31 @@
 {
     "builds": [
       {
-        "src": "server.js",
+        "src": "/backend/index.js",
+        "use": "@vercel/node"
+      },
+      {
+        "src": "/frontend/chat/index.js",
+        "use": "@vercel/node"
+      },
+      {
+        "src": "/frontend/videocall/index.js",
         "use": "@vercel/node"
       }
     ],
     "routes": [
       {
-        "src": "/(.*)",
-        "dest": "/index.js"
+        "src": "/backend/(.*)",
+        "dest": "/backend/index.js"
+      },
+      {
+        "src": "/frontend/chat/(.*)",
+        "dest": "/frontend/chat/index.js"
+      },
+      {
+        "src": "/frontend/videocall/(.*)",
+        "dest": "/frontend/videocall/index.js"
       }
     ]
   }
+  
