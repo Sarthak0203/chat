@@ -129,12 +129,8 @@ const VideoCall = ({ setIsAuthenticated }) => {
     muteAudButton.current.disabled = true;
   }
 
-
-
-
-
   useEffect(() => {
-    socket.current = io("http://localhost:8000", { transports: ["websocket"] });
+    socket.current = io("http://localhost:7500", { transports: ["websocket"] });
 
     socket.current.on("message", (e) => {
       if (!localStream) {
