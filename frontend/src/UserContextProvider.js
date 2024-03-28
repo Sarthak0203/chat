@@ -23,7 +23,7 @@ export const UserContextProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         try{
-        fetch('http://localhost:9000/name', {
+        fetch('https://chat-9c6a.onrender.com/name', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

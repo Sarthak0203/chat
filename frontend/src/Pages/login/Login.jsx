@@ -11,7 +11,7 @@ const Login = () => {
     const [redirect, setRedirect] = useState(false);
     async function login(e){
       e.preventDefault();
-      const response = await fetch('http://localhost:9000/login',{
+      const response = await fetch('https://chat-9c6a.onrender.com/login',{
         method:'POST',
         body:JSON.stringify({email,password}),
         headers:{'Content-Type':'Application/json'},

@@ -13,7 +13,7 @@ const SignUp = () => {
 
     async function signup(e){
         e.preventDefault();
-        const response = await fetch('http://localhost:9000/signup',{
+        const response = await fetch('https://chat-9c6a.onrender.com/signup',{
             method:'POST',
             body:JSON.stringify({first_name,last_name,email,password}),
             headers:{'Content-Type':'Application/json'}

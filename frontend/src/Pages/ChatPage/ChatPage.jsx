@@ -56,7 +56,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
       let email = "";
       if (user && user.email) {
         email = user.email;
-        const response = await fetch("http://localhost:9000/name", {
+        const response = await fetch("https://chat-9c6a.onrender.com/name", {
           method: "POST",
           body: JSON.stringify({ email: user.email }),
           headers: { "Content-Type": "Application/json" },
@@ -79,7 +79,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
         setUser(storedUser);
         userData = storedUser;
       } else if (user) {
-        const response = await fetch("http://localhost:9000/name", {
+        const response = await fetch("https://chat-9c6a.onrender.com/name", {
           method: "POST",
           headers: { "Content-Type": "Application/json" },
           credentials: "include",
