@@ -3,17 +3,19 @@ import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import arrow from "../../assets/arrow.png";
 import logo from "../../assets/logo.png";
+import vc from "../../assets/vc.svg";
 import "./ChatPage.css";
 import ping from "../../assets/ping.mp3";
 import { UserContext } from "../../UserContextProvider";
 
-const ChatPage = () => {
+const ChatPage = ({ setIsAuthenticated }) => {
   const { user, setUser } = useContext(UserContext);
   const userRef = useRef(user);
   const navigate = useNavigate();
-  let socket = io("http://localhost:8000");
+  const socket = useRef(null);
 
   useEffect(() => {
+    socket.current = io("http://localhost:8000");  
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
@@ -29,10 +31,10 @@ const ChatPage = () => {
       audio.muted = false;
     });
 
+
     const getname = async function (user) {
       let firstName = "";
       let email = "";
-      console.log("User object at start of getname:", userRef.current);
       if (user && user.email) {
         email = user.email;
         const response = await fetch("http://localhost:9000/name", {
@@ -43,52 +45,41 @@ const ChatPage = () => {
         });
 
         const data = await response.json();
-        console.log("Response data from server:", data);
         if (data && data.firstName) {
           firstName = data.firstName;
-          console.log("First name after fetch:", firstName);
           setUser({ firstName, email });
         } else {
-          console.log("First name not available in response data");
         }
       }
       return { firstName, email };
     };
 
     const fetchUser = async () => {
-      console.log("fetchUser start");
+      
       const storedUser = JSON.parse(localStorage.getItem("user"));
-      console.log("storedUser:", storedUser);
       let userData;
       if (storedUser) {
         setUser(storedUser);
         userData = storedUser;
       } else if (user) {
-        console.log("user:", user);
         const response = await fetch("http://localhost:9000/name", {
           method: "POST",
           headers: { "Content-Type": "Application/json" },
           credentials: "include",
           body: JSON.stringify({ email: user.email }),
         });
-        console.log("response:", response);
         userData = await response.json();
-        console.log("userData:", userData);
       } else {
-        console.log("user is null in fetchuser");
       }
     
       const { firstName, email } = await getname(userData);
-      console.log("firstName, email:", firstName, email);
     
       setUser({ firstName, email });
     
       if (firstName) {
-        socket.emit("new-user-joined", { firstName });
+        socket.current.emit("new-user-joined", { firstName });
       } else {
-        console.log("user not available");
       }
-      console.log("fetchUser end");
     };
     
     fetchUser();
@@ -105,34 +96,37 @@ const ChatPage = () => {
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      console.log('form submitted')
       const message = messageInput.value;
       if (user && user.firstName) {
         append(`You: ${message}`, "right");
-        socket.emit("send", message);
+        socket.current.emit("send", message);
         messageInput.value = "";
       } else {
-        console.log("User's name is not defined yet");
       }
     });
 
-    socket.on("user-joined", (data) => {
+    socket.current.on("user-joined", (data) => {
       append(`${data.firstName} joined the chat`, "left");
     });
 
-    socket.on("receive", (data) => {
+    socket.current.on("receive", (data) => {
       append(`${data.firstName}: ${data.message}`, "left");
       audio.play();
     });
-    socket.on("left", (name) => {
+    socket.current.on("left", (name) => {
       append(`${name.firstName} left the chat`, "left");
     });
+    return () => {
+      socket.current.disconnect(); 
+    };
   }, []);
 
   const handleLogout = () => {
-    socket.emit('logout', { firstName: user.firstName }, () => {
+    socket.current.emit('logout', { firstName: user.firstName }, () => {
         localStorage.removeItem('token');
+        setIsAuthenticated(false);
         navigate('/login');
+        setUser(null);
     });
   };
 
@@ -158,8 +152,12 @@ const ChatPage = () => {
             id="messageInp"
           />
           <button class="btn" type="submit">
-            <img src={arrow} alt="" srcset="" />
+            <img src={arrow} alt="" secSet="" />
           </button>
+          <button class="btn" onClick={() => navigate('/vc')}>
+          <img src={vc} alt="" secSet="" />
+        </button>
+          
         </form>
       </div>
     </div>

@@ -31,19 +31,24 @@ mongoose.connect('mongodb://localhost:27017/ChatApp')
   });
 
   app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
-    const userdoc = await user.findOne({ email });
-    if (!userdoc) {
-      return res.status(401).json('Wrong Credentials');
+    try {
+      const { email, password } = req.body;
+      const userdoc = await user.findOne({ email });
+      if (!userdoc) {
+        return res.status(401).json('Wrong Credentials');
+      }
+      const passok = bcrypt.compareSync(password, userdoc.password);
+      if (!passok) {
+        return res.status(401).json('Wrong Credentials');
+      }
+      jwt.sign({ email, id: userdoc._id }, secret, {}, (err, token) => {
+        if (err) throw err;
+        res.cookie('token', token).json({ status: 'ok', user: userdoc }); // Include the user data in the response
+      });
+    } catch (error) {
+      console.error(`Error in /login route: ${error.message}`);
+      res.status(500).send('Server error');
     }
-    const passok = bcrypt.compareSync(password, userdoc.password);
-    if (!passok) {
-      return res.status(401).json('Wrong Credentials');
-    }
-    jwt.sign({ email, id: userdoc._id }, secret, {}, (err, token) => {
-      if (err) throw err;
-      res.cookie('token', token).json({ status: 'ok', user: userdoc }); // Include the user data in the response
-    });
   });
   
 
@@ -51,7 +56,7 @@ app.post('/name', async (req, res) => {
   const { email } = req.body;
   const userdoc = await user.findOne({ email });
   if (userdoc) {
-    return res.status(200).json({firstName: userdoc.first_name}); // Return the name in an object
+    return res.status(200).json({firstName: userdoc.first_name, email: userdoc.email});
   } else {
     return res.status(404).json({error: 'User not found'});
   }
