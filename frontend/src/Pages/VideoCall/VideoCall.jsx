@@ -49,7 +49,9 @@ const VideoCall = ({ setIsAuthenticated }) => {
         socket.current.emit("message", message);
       };
       pc.ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-      localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+      localStream
+        .getTracks()
+        .forEach((track) => pc.addTrack(track, localStream));
       const offer = await pc.createOffer();
       socket.current.emit("message", { type: "offer", sdp: offer.sdp });
       await pc.setLocalDescription(offer);
@@ -78,7 +80,9 @@ const VideoCall = ({ setIsAuthenticated }) => {
         socket.current.emit("message", message);
       };
       pc.ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-      localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+      localStream
+        .getTracks()
+        .forEach((track) => pc.addTrack(track, localStream));
       await pc.setRemoteDescription(offer);
 
       const answer = await pc.createAnswer();
@@ -130,6 +134,7 @@ const VideoCall = ({ setIsAuthenticated }) => {
   }
 
   useEffect(() => {
+    window.addEventListener("popstate", hangB);
     socket.current = io("http://localhost:7500", { transports: ["websocket"] });
 
     socket.current.on("message", (e) => {
@@ -155,6 +160,12 @@ const VideoCall = ({ setIsAuthenticated }) => {
           }
           makeCall();
           break;
+        case "hangup":
+          // If a 'hangup' message is received, end the call
+          if (pc) {
+            hangup();
+          }
+          break;
         case "bye":
           if (pc) {
             hangup();
@@ -166,10 +177,11 @@ const VideoCall = ({ setIsAuthenticated }) => {
       }
     });
 
-    
-
     hangupButton.current.disabled = true;
     muteAudButton.current.disabled = true;
+    return () => {
+      window.removeEventListener("popstate", hangB);
+    };
   }, []);
 
   const [audiostate, setAudio] = useState(false);
@@ -194,7 +206,7 @@ const VideoCall = ({ setIsAuthenticated }) => {
 
   const hangB = async () => {
     hangup();
-    socket.current.emit("message", { type: "bye" });
+    socket.current.emit("message", { type: "hangup" });
   };
 
   function muteAudio() {
@@ -208,12 +220,12 @@ const VideoCall = ({ setIsAuthenticated }) => {
   }
 
   const handleLogout = () => {
-    console.log('Logout emitted outside function');
+    console.log("Logout emitted outside function");
     socket.current.emit("logout", { firstName: user.firstName }, (error) => {
       if (error) {
-        console.error('Error logging out:', error);
+        console.error("Error logging out:", error);
       } else {
-        console.log('Logout emitted from function');
+        console.log("Logout emitted from function");
         localStorage.removeItem("token");
         setIsAuthenticated(false);
         navigate("/login");
@@ -285,6 +297,6 @@ const VideoCall = ({ setIsAuthenticated }) => {
       </main>
     </>
   );
-}
+};
 
 export default VideoCall;

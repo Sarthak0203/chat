@@ -50,7 +50,7 @@ nav{
     
 }
 .message{
-    width: 30%;
+    width: 35%;
     padding: 10px;
     margin: 17px 12px;
     border-radius: 10px;
@@ -119,6 +119,52 @@ input:focus{
     float: right;
     display: none;
 }
-.logoutBtn{
+.menuBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  
+  .menuIcon {
+    width: 30px;
+    height: 30px;
+    fill: white;
+    transition: transform 0.3s ease;
+  }
+  
+  .menuIcon.open {
+    transform: rotate(90deg);
+  }
+  
+  .menu {
+    position: absolute;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
     
-}
+  .menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: none;
+    padding: 5px 0;
+    cursor: pointer;
+  }
+
+  .message.joined {
+    color: green;
+  }
+  
+  .message.leftchat {
+    color: red;
+  }
+  
+  div.message.video-call {
+    color: blue !important; /* Change to the desired color */
+  }

@@ -1,4 +1,4 @@
-import React, { useEffect, useContext, useRef } from "react";
+import React, { useEffect, useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import arrow from "../../assets/arrow.png";
@@ -13,24 +13,42 @@ const ChatPage = ({ setIsAuthenticated }) => {
   const userRef = useRef(user);
   const navigate = useNavigate();
   const socket = useRef(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Define the append function
+  const append = (message, position, messageType) => {
+    const messageElement = document.createElement("div");
+    const date = new Date();
+    const timestamp = `${date.getHours()}:${date.getMinutes()}`;
+    messageElement.innerHTML = `<span class="timestamp">${timestamp}</span>${message}`;
+    messageElement.classList.add("message");
+    messageElement.classList.add(position);
+    messageElement.classList.add(messageType);
+    if (messageType === "video-call") {
+      console.log(messageElement.classList)
+      messageElement.classList.add("video-call");
+      console.log(messageElement.classList)
+    }
+    const messageContainer = document.querySelector(".container");
+    messageContainer.append(messageElement);
+    console.log(messageElement)
+  };
 
   useEffect(() => {
-    socket.current = io("http://localhost:8000");  
-    const token = localStorage.getItem('token');
+    socket.current = io("http://localhost:8000");
+    const token = localStorage.getItem("token");
     if (!token) {
-      navigate('/login');
+      navigate("/login");
     }
 
     const form = document.getElementById("send-container");
     const messageInput = document.getElementById("messageInp");
-    const messageContainer = document.querySelector(".container");
     var audio = new Audio(ping);
     audio.muted = true;
 
     window.addEventListener("click", function () {
       audio.muted = false;
     });
-
 
     const getname = async function (user) {
       let firstName = "";
@@ -48,14 +66,12 @@ const ChatPage = ({ setIsAuthenticated }) => {
         if (data && data.firstName) {
           firstName = data.firstName;
           setUser({ firstName, email });
-        } else {
         }
       }
       return { firstName, email };
     };
 
     const fetchUser = async () => {
-      
       const storedUser = JSON.parse(localStorage.getItem("user"));
       let userData;
       if (storedUser) {
@@ -69,30 +85,18 @@ const ChatPage = ({ setIsAuthenticated }) => {
           body: JSON.stringify({ email: user.email }),
         });
         userData = await response.json();
-      } else {
       }
-    
+
       const { firstName, email } = await getname(userData);
-    
+
       setUser({ firstName, email });
-    
+
       if (firstName) {
         socket.current.emit("new-user-joined", { firstName });
-      } else {
       }
     };
-    
-    fetchUser();
 
-    const append = (message, position) => {
-      const messageElement = document.createElement("div");
-      const date = new Date();
-      const timestamp = `${date.getHours()}:${date.getMinutes()}`;
-      messageElement.innerHTML = `<span class="timestamp">${timestamp}</span>${message}`;
-      messageElement.classList.add("message");
-      messageElement.classList.add(position);
-      messageContainer.append(messageElement);
-    };
+    fetchUser();
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -101,49 +105,74 @@ const ChatPage = ({ setIsAuthenticated }) => {
         append(`You: ${message}`, "right");
         socket.current.emit("send", message);
         messageInput.value = "";
-      } else {
       }
     });
 
     socket.current.on("user-joined", (data) => {
-      append(`${data.firstName} joined the chat`, "left");
+      append(`${data.firstName} joined the chat`, "left", "joined"); // Use "joined" messageType
     });
 
     socket.current.on("receive", (data) => {
       append(`${data.firstName}: ${data.message}`, "left");
-      audio.play();
+      //audio.play();
     });
+
     socket.current.on("left", (name) => {
-      append(`${name.firstName} left the chat`, "left");
+      append(`${name.firstName} left the chat`, "leftchat", "left"); // Use "left" messageType
     });
+    socket.current.on("welcome-message", (message) => {
+      append(message, "center",);
+    });
+    
     return () => {
-      socket.current.disconnect(); 
+      socket.current.disconnect();
     };
   }, []);
 
   const handleLogout = () => {
-    socket.current.emit('logout', { firstName: user.firstName }, () => {
-        localStorage.removeItem('token');
-        setIsAuthenticated(false);
-        navigate('/login');
-        setUser(null);
+    socket.current.emit("logout", { firstName: user.firstName }, () => {
+      localStorage.removeItem("token");
+      setIsAuthenticated(false);
+      navigate("/login");
+      setUser(null);
     });
   };
+  const handleAccount = () => {
+    navigate("/account");
+  };
+  const handleVideoCall = () => {
+  if (user && user.firstName) {
+    socket.current.emit("video-call-started", { firstName: user.firstName });
+    append(`${user.firstName} started a video call.`, "left", "video-call"); // Use "video-call" messageType
+    navigate("/vc");
+  }
+};
 
   return (
     <div className="wrapper">
       <nav>
         <div className="wrapperAnon">
-        <img class="logo" src={logo} alt="" />
-        <h2 id="h2">Anonymous Chat</h2>
+          <img className="logo" src={logo} alt="" />
+          <h2 id="h2">Anonymous Chat</h2>
         </div>
         <div className="btnWrapper">
-        <button className="logoutBtn" onClick={handleLogout}>Logout</button>
+          <button
+            className="menuBtn"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            Menu
+          </button>
+          {isMenuOpen && (
+            <div className="menu">
+              <button onClick={handleAccount}>Account</button>
+              <button onClick={handleLogout}>Logout</button>
+            </div>
+          )}
         </div>
       </nav>
 
-      <div class="container"></div>
-      <div class="send">
+      <div className="container"></div>
+      <div className="send">
         <form action="#" id="send-container">
           <input
             type="text"
@@ -151,13 +180,12 @@ const ChatPage = ({ setIsAuthenticated }) => {
             placeholder="Message..."
             id="messageInp"
           />
-          <button class="btn" type="submit">
+          <button className="btn" type="submit">
             <img src={arrow} alt="" secSet="" />
           </button>
-          <button class="btn" onClick={() => navigate('/vc')}>
-          <img src={vc} alt="" secSet="" />
-        </button>
-          
+          <button className="btn" onClick={handleVideoCall}>
+            <img src={vc} alt="" secSet="" />
+          </button>
         </form>
       </div>
     </div>
