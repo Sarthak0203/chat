@@ -97,3 +97,65 @@ input:focus{
   div.message.video-call {
     color: blue !important; /* Change to the desired color */
   }
+
+ /* Toast notification styling */
+.Toastify__toast-container {
+    z-index: 9999;
+    padding: 16px;
+    position: absolute;
+    top: 64px; /* Adjust this value to match your navbar height */
+    right: 0;
+  }
+  
+  .Toastify__toast {
+    font-family: 'Arial', sans-serif;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .Toastify__toast--info {
+    background-color: #1e1e1e;
+    color: #ffffff;
+  }
+  
+  .Toastify__toast-body {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  .Toastify__toast-body .Toastify__close-button {
+    color: #ffffff;
+  }
+  
+  .Toastify__toast--info .Toastify__close-button {
+    opacity: 0.7;
+  }
+  
+  .Toastify__toast--info:hover .Toastify__close-button {
+    opacity: 1;
+  }
+  
+  .Toastify__toast--info .answerbtn, .Toastify__toast--info .declinebtn {
+    background-color: #4e4e4e;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    margin-left: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .Toastify__toast--info .answerbtn:hover, .Toastify__toast--info .declinebtn:hover {
+    background-color: #6e6e6e;
+  }
+  
+  .Toastify__toast--info .answerbtn:focus, .Toastify__toast--info .declinebtn:focus {
+    outline: none;
+  }
+  
+  .Toastify__toast--info .answerbtn {
+    margin-right: 10px;
+  }
+  

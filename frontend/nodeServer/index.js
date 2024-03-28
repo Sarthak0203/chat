@@ -55,6 +55,16 @@ io.on('connection', socket => {
         socket.broadcast.emit('receive', {message: `${user.firstName} started a video chat`, firstName: 'System'});
       });
       
+      socket.on('call-invitation', (user) => {
+        socket.broadcast.emit('incoming-call', user);
+      });
     
+      socket.on('call-accepted', (user) => {
+        socket.broadcast.emit('call-accepted', user);
+      });
+    
+      socket.on('call-declined', (user) => {
+        socket.broadcast.emit('call-declined', user);
+      });
     
 });

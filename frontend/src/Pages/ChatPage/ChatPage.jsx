@@ -7,6 +7,8 @@ import "./ChatPage.css";
 import ping from "../../assets/ping.mp3";
 import { UserContext } from "../../UserContextProvider";
 import Navbar from "../../Components/Navbar/Navbar"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ChatPage = ({ setIsAuthenticated }) => {
   const { user, setUser } = useContext(UserContext);
@@ -25,13 +27,12 @@ const ChatPage = ({ setIsAuthenticated }) => {
     messageElement.classList.add(position);
     messageElement.classList.add(messageType);
     if (messageType === "video-call") {
-      console.log(messageElement.classList);
+
       messageElement.classList.add("video-call");
-      console.log(messageElement.classList);
+
     }
     const messageContainer = document.querySelector(".container");
     messageContainer.append(messageElement);
-    console.log(messageElement);
   };
 
   useEffect(() => {
@@ -114,7 +115,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
 
     socket.current.on("receive", (data) => {
       append(`${data.firstName}: ${data.message}`, "left");
-      audio.play();
+      // audio.play();
     });
 
     socket.current.on("left", (name) => {
@@ -122,6 +123,20 @@ const ChatPage = ({ setIsAuthenticated }) => {
     });
     socket.current.on("welcome-message", (message) => {
       append(message, "center");
+    });
+    socket.current.on("incoming-call", (data) => {
+      console.log('incoming-call fired')
+      toast.info(`${data.firstName} is calling...`, {
+        position: "top-right",
+        autoClose: 10000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        // Add buttons for answering or declining the call
+        closeButton: <div><button className="answerbtn" onClick={handleAnswer}>Answer</button><button className="declinebtn" onClick={handleDecline}>Decline</button></div>,
+      });
     });
 
     return () => {
@@ -142,10 +157,20 @@ const ChatPage = ({ setIsAuthenticated }) => {
   };
   const handleVideoCall = () => {
     if (user && user.firstName) {
-      socket.current.emit("video-call-started", { firstName: user.firstName });
+      socket.current.emit("call-invitation", { firstName: user.firstName });
       append(`${user.firstName} started a video call.`, "left", "video-call"); // Use "video-call" messageType
       navigate("/vc");
     }
+  };
+  const handleAnswer = () => {
+    // Emit a 'call-accepted' event and navigate to the video call page
+    socket.current.emit("call-accepted", { firstName: user.firstName });
+    navigate("/vc");
+  };
+  
+  const handleDecline = () => {
+    // Emit a 'call-declined' event
+    socket.current.emit("call-declined", { firstName: user.firstName });
   };
 
   return (
@@ -172,6 +197,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
           </button>
         </form>
       </div>
+      <ToastContainer />
     </div>
   );
 };

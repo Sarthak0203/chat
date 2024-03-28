@@ -56,6 +56,7 @@ const VideoCall = ({ setIsAuthenticated }) => {
       const offer = await pc.createOffer();
       socket.current.emit("message", { type: "offer", sdp: offer.sdp });
       await pc.setLocalDescription(offer);
+      setIsCallActive(true);
     } catch (e) {
       console.log(e);
     }
@@ -132,6 +133,7 @@ const VideoCall = ({ setIsAuthenticated }) => {
     startButton.current.disabled = false;
     hangupButton.current.disabled = true;
     muteAudButton.current.disabled = true;
+    setIsCallActive(false);
   }
 
   useEffect(() => {
@@ -187,7 +189,7 @@ const VideoCall = ({ setIsAuthenticated }) => {
 
   const [audiostate, setAudio] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  
+  const [isCallActive, setIsCallActive] = useState(false);
 
   const startB = async () => {
     try {
