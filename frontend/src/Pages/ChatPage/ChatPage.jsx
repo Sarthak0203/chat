@@ -2,11 +2,11 @@ import React, { useEffect, useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import arrow from "../../assets/arrow.png";
-import logo from "../../assets/logo.png";
 import vc from "../../assets/vc.svg";
 import "./ChatPage.css";
 import ping from "../../assets/ping.mp3";
 import { UserContext } from "../../UserContextProvider";
+import Navbar from "../../Components/Navbar/Navbar"
 
 const ChatPage = ({ setIsAuthenticated }) => {
   const { user, setUser } = useContext(UserContext);
@@ -25,13 +25,13 @@ const ChatPage = ({ setIsAuthenticated }) => {
     messageElement.classList.add(position);
     messageElement.classList.add(messageType);
     if (messageType === "video-call") {
-      console.log(messageElement.classList)
+      console.log(messageElement.classList);
       messageElement.classList.add("video-call");
-      console.log(messageElement.classList)
+      console.log(messageElement.classList);
     }
     const messageContainer = document.querySelector(".container");
     messageContainer.append(messageElement);
-    console.log(messageElement)
+    console.log(messageElement);
   };
 
   useEffect(() => {
@@ -114,16 +114,16 @@ const ChatPage = ({ setIsAuthenticated }) => {
 
     socket.current.on("receive", (data) => {
       append(`${data.firstName}: ${data.message}`, "left");
-      //audio.play();
+      audio.play();
     });
 
     socket.current.on("left", (name) => {
       append(`${name.firstName} left the chat`, "leftchat", "left"); // Use "left" messageType
     });
     socket.current.on("welcome-message", (message) => {
-      append(message, "center",);
+      append(message, "center");
     });
-    
+
     return () => {
       socket.current.disconnect();
     };
@@ -141,36 +141,20 @@ const ChatPage = ({ setIsAuthenticated }) => {
     navigate("/account");
   };
   const handleVideoCall = () => {
-  if (user && user.firstName) {
-    socket.current.emit("video-call-started", { firstName: user.firstName });
-    append(`${user.firstName} started a video call.`, "left", "video-call"); // Use "video-call" messageType
-    navigate("/vc");
-  }
-};
+    if (user && user.firstName) {
+      socket.current.emit("video-call-started", { firstName: user.firstName });
+      append(`${user.firstName} started a video call.`, "left", "video-call"); // Use "video-call" messageType
+      navigate("/vc");
+    }
+  };
 
   return (
     <div className="wrapper">
-      <nav>
-        <div className="wrapperAnon">
-          <img className="logo" src={logo} alt="" />
-          <h2 id="h2">Anonymous Chat</h2>
-        </div>
-        <div className="btnWrapper">
-          <button
-            className="menuBtn"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            Menu
-          </button>
-          {isMenuOpen && (
-            <div className="menu">
-              <button onClick={handleAccount}>Account</button>
-              <button onClick={handleLogout}>Logout</button>
-            </div>
-          )}
-        </div>
-      </nav>
-
+      <Navbar
+        handleLogout={handleLogout}
+        handleAccount={handleAccount}
+        setIsMenuOpen={setIsMenuOpen}
+      />
       <div className="container"></div>
       <div className="send">
         <form action="#" id="send-container">

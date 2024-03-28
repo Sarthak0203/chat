@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../UserContextProvider";
 import { FiVideo, FiVideoOff, FiMic, FiMicOff } from "react-icons/fi";
 import "./style.css";
-import logo from "../../assets/logo.png";
+import Navbar from "../../Components/Navbar/Navbar";
+
 
 const configuration = {
   iceServers: [
@@ -185,6 +186,8 @@ const VideoCall = ({ setIsAuthenticated }) => {
   }, []);
 
   const [audiostate, setAudio] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
 
   const startB = async () => {
     try {
@@ -233,20 +236,18 @@ const VideoCall = ({ setIsAuthenticated }) => {
       }
     });
   };
+  const handleAccount = () => {
+    navigate("/account");
+  };
 
   return (
     <>
-      <nav>
-        <div className="wrapperAnon">
-          <img class="logo" src={logo} alt="" />
-          <h2 id="h2">Anonymous Chat</h2>
-        </div>
-        <div className="btnWrapper">
-          <button className="logoutBtn" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
-      </nav>
+      <Navbar
+        handleLogout={handleLogout}
+        handleAccount={handleAccount}
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+      />
       <main className="container1">
         <div className="video-container">
           <div className="video-item-wrapper">
