@@ -16,24 +16,37 @@ const ChatPage = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
   const socket = useRef(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
 
-  // Define the append function
   const append = (message, position, messageType) => {
     const messageElement = document.createElement("div");
     const date = new Date();
     const timestamp = `${date.getHours()}:${date.getMinutes()}`;
-    messageElement.innerHTML = `<span class="timestamp">${timestamp}</span>${message}`;
+    messageElement.innerHTML = `<div class="message-content">${message}</div><div class="timestamp">${timestamp}</div>`;
     messageElement.classList.add("message");
     messageElement.classList.add(position);
     messageElement.classList.add(messageType);
     if (messageType === "video-call") {
-
       messageElement.classList.add("video-call");
-
     }
+  
+    // Add the fade-in class after a short delay to trigger the animation
+    setTimeout(() => {
+      messageElement.classList.add("fade-in");
+    }, 50);
+  
     const messageContainer = document.querySelector(".container");
     messageContainer.append(messageElement);
+  
+    // Smooth scroll animation
+    setTimeout(() => {
+      messageContainer.scrollTo({
+        top: messageContainer.scrollHeight,
+        behavior: "smooth"
+      });
+    }, 100); // Adjust the delay as needed for animation timing
   };
+  
 
   useEffect(() => {
     socket.current = io("http://localhost:8000");
@@ -174,6 +187,13 @@ const ChatPage = ({ setIsAuthenticated }) => {
     // Emit a 'call-declined' event
     socket.current.emit("call-declined", { firstName: user.firstName });
   };
+  const scrollToBottom = () => {
+    const messageContainer = document.querySelector(".container");
+    messageContainer.scrollTo({
+      top: messageContainer.scrollHeight,
+      behavior: "smooth"
+    });
+  };
 
   return (
     <div className="wrapper">
@@ -182,7 +202,10 @@ const ChatPage = ({ setIsAuthenticated }) => {
         handleAccount={handleAccount}
         setIsMenuOpen={setIsMenuOpen}
       />
-      <div className="container"></div>
+      <div className="container">
+      
+
+      </div>
       <div className="send">
         <form action="#" id="send-container">
           <input
