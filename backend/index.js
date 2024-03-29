@@ -13,7 +13,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const secret = process.env.key;
-const port = process.env.port;
+const port = process.env.portforbackend;
 
 mongoose.connect(process.env.MongoURL)
   .then(() => console.log('Database connected successfully'))
