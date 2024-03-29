@@ -102,12 +102,14 @@ const ChatPage = ({ setIsAuthenticated }) => {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const message = messageInput.value;
-      if (user && user.firstName) {
+      // Only send the message if the input is not empty
+      if (message.trim() !== '' && user && user.firstName) {
         append(`You: ${message}`, "right");
         socket.current.emit("send", message);
         messageInput.value = "";
       }
     });
+    
 
     socket.current.on("user-joined", (data) => {
       append(`${data.firstName} joined the chat`, "left", "joined"); // Use "joined" messageType
@@ -116,7 +118,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
     socket.current.on("receive", (data) => {
       append(`${data.firstName}: ${data.message}`, "left");
       // audio.play();
-    });
+    });    
 
     socket.current.on("left", (name) => {
       append(`${name.firstName} left the chat`, "leftchat", "left"); // Use "left" messageType

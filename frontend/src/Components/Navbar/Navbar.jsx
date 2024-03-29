@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Route, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 import { UserContext } from "../../UserContextProvider";
 import "./Navbar.css";
@@ -13,6 +13,9 @@ const Navbar = ({ handleLogout, handleAccount }) => {
   const closeMenu = () => {
     setIsMenuOpen(false);
   };
+  const handleimgclick = (()=>{
+    navigate('/chat');
+  })
 
   // Event listener for clicks outside the menu
   useEffect(() => {
@@ -48,10 +51,11 @@ const Navbar = ({ handleLogout, handleAccount }) => {
     };
   }, []);
 
+
   return (
     <nav>
       <div className="wrapperAnon">
-        <img className="logo" src={logo} alt="" />
+        <img className="logo" src={logo} alt=""  onClick={handleimgclick}/>
         <h2 id="h2">Anonymous Chat</h2>
       </div>
       <div className="btnWrapper">

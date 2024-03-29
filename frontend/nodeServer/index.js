@@ -16,14 +16,12 @@ io.on('connection', socket => {
         if (index !== -1) {
             connectedUsers.splice(index, 1);
         }
-        // Add 'you' at the beginning of the list of connected users
         connectedUsers = ['You'].concat(connectedUsers);
         if (connectedUsers.length > 1) {
             socket.emit('welcome-message', `Welcome! Users currently connected: ${connectedUsers.join(', ')}`);
         } else {
             socket.emit('welcome-message', 'Welcome! No other users are currently connected.');
         }
-        // Notify other users that a new user has joined
         socket.broadcast.emit('user-joined', name);
         console.log('user connected');
         
@@ -66,5 +64,7 @@ io.on('connection', socket => {
       socket.on('call-declined', (user) => {
         socket.broadcast.emit('call-declined', user);
       });
-    
+      socket.on('name-change', ({ oldName, newName }) => {
+        socket.broadcast.emit('receive', {message: `${oldName} changed their name to ${newName}`, firstName: 'System'});
+      });
 });
