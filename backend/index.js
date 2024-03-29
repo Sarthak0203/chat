@@ -8,6 +8,7 @@ app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true
 }));
+console.log('test');
 const user = require('./Models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
