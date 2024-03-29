@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const app = express();
+require('dotenv').config();
 app.use(express.json());
 app.use(cors({
   origin: 'http://localhost:3000',
@@ -11,9 +12,10 @@ const user = require('./Models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-const secret = 'asdfasdfasdfasdfasdf';
+const secret = process.env.key;
+const port = process.env.port;
 
-mongoose.connect('mongodb://localhost:27017/ChatApp')
+mongoose.connect(process.env.MongoURL)
   .then(() => console.log('Database connected successfully'))
   .catch(err => console.log('Database connection failed', err));
 
@@ -63,4 +65,4 @@ app.post('/name', async (req, res) => {
 });
   
 
-  app.listen(9000, () => console.log('Server is running on port 9000'));
+  app.listen(port, () => console.log('Server is running on port 9000'));
