@@ -6,6 +6,7 @@ import Login from './Pages/login/Login';
 import SignUp from './Pages/SignUp/SignUp';
 import VideoCall from './Pages/VideoCall/VideoCall'
 import { UserContextProvider } from './UserContextProvider';
+import AccountPage from './Pages/AccountPage/AccountPage';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -32,6 +33,7 @@ function App() {
           <Route path="/chat" element={!isAuthenticated ? <Login /> : <ChatPage isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />} />
           <Route path="/vc" element={!isAuthenticated ? <Login /> : <VideoCall isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />} />
           <Route path="/" element={isAuthenticated ? <ChatPage isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} /> : <Login />} />
+          <Route path="/account" element={isAuthenticated ? <AccountPage isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} /> : <Login />} />
         </Routes>
       </BrowserRouter>
     </UserContextProvider>
