@@ -33,67 +33,70 @@ const VideoCall = ({ setIsAuthenticated }) => {
   const { user, setUser } = useContext(UserContext);
   const navigate = useNavigate();
   const socket = useRef();
+  let pcs = {}; // Store RTCPeerConnections for each room
+let localStreams = {}; // Store local streams for each room
 
-  async function makeCall() {
-    try {
-      pc = new RTCPeerConnection(configuration);
-      pc.onicecandidate = (e) => {
-        const message = {
-          type: "candidate",
-          candidate: null,
-        };
-        if (e.candidate) {
-          message.candidate = e.candidate.candidate;
-          message.sdpMid = e.candidate.sdpMid;
-          message.sdpMLineIndex = e.candidate.sdpMLineIndex;
-        }
-        socket.current.emit("message", message);
+async function makeCall(roomId) {
+  try {
+    pcs[roomId] = new RTCPeerConnection(configuration);
+    pcs[roomId].onicecandidate = (e) => {
+      const message = {
+        type: "candidate",
+        candidate: null,
       };
-      pc.ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-      localStream
-        .getTracks()
-        .forEach((track) => pc.addTrack(track, localStream));
-      const offer = await pc.createOffer();
-      socket.current.emit("message", { type: "offer", sdp: offer.sdp });
-      await pc.setLocalDescription(offer);
-      setIsCallActive(true);
-    } catch (e) {
-      console.log(e);
-    }
+      if (e.candidate) {
+        message.candidate = e.candidate.candidate;
+        message.sdpMid = e.candidate.sdpMid;
+        message.sdpMLineIndex = e.candidate.sdpMLineIndex;
+      }
+      socket.current.emit("message", message);
+    };
+    pcs[roomId].ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
+    localStreams[roomId]
+      .getTracks()
+      .forEach((track) => pcs[roomId].addTrack(track, localStreams[roomId]));
+    const offer = await pcs[roomId].createOffer();
+    socket.current.emit("message", { type: "offer", sdp: offer.sdp });
+    await pcs[roomId].setLocalDescription(offer);
+    setIsCallActive(true);
+  } catch (e) {
+    console.log(e);
   }
+}
 
-  async function handleOffer(offer) {
-    if (pc) {
-      console.error("existing peerconnection");
-      return;
-    }
-    try {
-      pc = new RTCPeerConnection(configuration);
-      pc.onicecandidate = (e) => {
-        const message = {
-          type: "candidate",
-          candidate: null,
-        };
-        if (e.candidate) {
-          message.candidate = e.candidate.candidate;
-          message.sdpMid = e.candidate.sdpMid;
-          message.sdpMLineIndex = e.candidate.sdpMLineIndex;
-        }
-        socket.current.emit("message", message);
+
+async function handleOffer(offer, roomId) {
+  if (pcs[roomId]) {
+    console.error("existing peerconnection");
+    return;
+  }
+  try {
+    pcs[roomId] = new RTCPeerConnection(configuration);
+    pcs[roomId].onicecandidate = (e) => {
+      const message = {
+        type: "candidate",
+        candidate: null,
       };
-      pc.ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-      localStream
-        .getTracks()
-        .forEach((track) => pc.addTrack(track, localStream));
-      await pc.setRemoteDescription(offer);
+      if (e.candidate) {
+        message.candidate = e.candidate.candidate;
+        message.sdpMid = e.candidate.sdpMid;
+        message.sdpMLineIndex = e.candidate.sdpMLineIndex;
+      }
+      socket.current.emit("message", message);
+    };
+    pcs[roomId].ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
+    localStreams[roomId]
+      .getTracks()
+      .forEach((track) => pcs[roomId].addTrack(track, localStreams[roomId]));
+    await pcs[roomId].setRemoteDescription(offer);
 
-      const answer = await pc.createAnswer();
-      socket.current.emit("message", { type: "answer", sdp: answer.sdp });
-      await pc.setLocalDescription(answer);
-    } catch (e) {
-      console.log(e);
-    }
+    const answer = await pcs[roomId].createAnswer();
+    socket.current.emit("message", { type: "answer", sdp: answer.sdp });
+    await pcs[roomId].setLocalDescription(answer);
+  } catch (e) {
+    console.log(e);
   }
+}
 
   async function handleAnswer(answer) {
     if (!pc) {
@@ -123,18 +126,21 @@ const VideoCall = ({ setIsAuthenticated }) => {
     }
   }
 
-  async function hangup() {
-    if (pc) {
-      pc.close();
-      pc = null;
+  async function hangup(roomId) {
+    if (pcs[roomId]) {
+      pcs[roomId].close();
+      pcs[roomId] = null;
     }
-    localStream.getTracks().forEach((track) => track.stop());
-    localStream = null;
+    if (localStreams[roomId]) {
+      localStreams[roomId].getTracks().forEach((track) => track.stop());
+      localStreams[roomId] = null;
+    }
     startButton.current.disabled = false;
     hangupButton.current.disabled = true;
     muteAudButton.current.disabled = true;
     setIsCallActive(false);
   }
+  
 
   useEffect(() => {
     window.addEventListener("popstate", hangB);
@@ -156,7 +162,6 @@ const VideoCall = ({ setIsAuthenticated }) => {
           handleCandidate(e);
           break;
         case "ready":
-          // A second tab joined. This tab will initiate a call unless in a call already.
           if (pc) {
             console.log("already in call, ignoring");
             return;
@@ -191,21 +196,21 @@ const VideoCall = ({ setIsAuthenticated }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCallActive, setIsCallActive] = useState(false);
 
-  const startB = async () => {
+  const startB = async (roomId) => {
     try {
-      localStream = await navigator.mediaDevices.getUserMedia({
+      localStreams[roomId] = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: { echoCancellation: true },
       });
-      localVideo.current.srcObject = localStream;
+      localVideo.current.srcObject = localStreams[roomId];
     } catch (err) {
       console.log(err);
     }
-
+  
     startButton.current.disabled = true;
     hangupButton.current.disabled = false;
     muteAudButton.current.disabled = false;
-
+  
     socket.current.emit("message", { type: "ready" });
   };
 

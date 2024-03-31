@@ -33,7 +33,6 @@ export const UserContextProvider = ({ children }) => {
         })
         .then(response => response.json())
         .then(data => {
-          console.log(data);
           if (data.firstName) {
             setUser({ firstName: data.firstName, email: data.email });
           }

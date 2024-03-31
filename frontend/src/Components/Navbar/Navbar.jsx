@@ -4,7 +4,7 @@ import logo from "../../assets/logo.png";
 import { UserContext } from "../../UserContextProvider";
 import "./Navbar.css";
 
-const Navbar = ({ handleLogout, handleAccount }) => {
+const Navbar = ({ handleLogout, handleAccount, roomCode, joinRoom }) => {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,20 +43,20 @@ const Navbar = ({ handleLogout, handleAccount }) => {
         closeMenu();
       }
     };
-
+    console.log(roomCode);
     document.addEventListener("keydown", handleEscapeKeyPress);
 
     return () => {
       document.removeEventListener("keydown", handleEscapeKeyPress);
     };
-  }, []);
+  }, [roomCode]);
 
 
   return (
     <nav>
       <div className="wrapperAnon">
-        <img className="logo" src={logo} alt=""  onClick={handleimgclick}/>
-        <h2 id="h2">Anonymous Chat</h2>
+        <img className="logo" src={logo} alt="" onClick={() => navigate("/chat")} />
+        <h2 id="h2">Anonymous Chat {roomCode && `Room: ${roomCode}`}</h2>
       </div>
       <div className="btnWrapper">
         <div className="menuToggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -66,6 +66,7 @@ const Navbar = ({ handleLogout, handleAccount }) => {
           <div className="menu">
             <button onClick={handleAccount}>Account</button>
             <button onClick={handleLogout}>Logout</button>
+            <button onClick={joinRoom}>Join Room</button> {/* Button to join room */}
           </div>
         )}
       </div>
