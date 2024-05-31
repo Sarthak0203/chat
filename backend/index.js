@@ -53,7 +53,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-
 app.post('/name', async (req, res) => {
   const { email } = req.body;
   const userdoc = await user.findOne({ email });
