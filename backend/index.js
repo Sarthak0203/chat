@@ -57,7 +57,6 @@ const secret = process.env.key;
 const port = process.env.PORT_FOR_BACKEND || 9000;
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
-
 mongoose.connect(process.env.MongoURL)
   .then(() => console.log('Database connected successfully'))
   .catch(err => console.log('Database connection failed', err));
