@@ -6,7 +6,6 @@ import { FiVideo, FiVideoOff, FiMic, FiMicOff } from "react-icons/fi";
 import "./style.css";
 import Navbar from "../../Components/Navbar/Navbar";
 
-
 const configuration = {
   iceServers: [
     {
@@ -16,117 +15,108 @@ const configuration = {
   iceCandidatePoolSize: 10,
 };
 
-let pc;
-let localStream;
-let startButton;
-let hangupButton;
-let muteAudButton;
-let remoteVideo;
-let localVideo;
-
 const VideoCall = ({ setIsAuthenticated }) => {
-  startButton = useRef(null);
-  hangupButton = useRef(null);
-  muteAudButton = useRef(null);
-  localVideo = useRef(null);
-  remoteVideo = useRef(null);
+  const startButton = useRef(null);
+  const hangupButton = useRef(null);
+  const muteAudButton = useRef(null);
+  const localVideo = useRef(null);
+  const remoteVideo = useRef(null);
   const { user, setUser } = useContext(UserContext);
   const navigate = useNavigate();
   const socket = useRef();
-  let pcs = {}; // Store RTCPeerConnections for each room
-let localStreams = {}; // Store local streams for each room
+  const pcs = {}; // Store RTCPeerConnections for each room
+  const localStreams = {}; // Store local streams for each room
 
-async function makeCall(roomId) {
-  try {
-    pcs[roomId] = new RTCPeerConnection(configuration);
-    pcs[roomId].onicecandidate = (e) => {
-      const message = {
-        type: "candidate",
-        candidate: null,
+  const makeCall = async (roomId) => {
+    try {
+      pcs[roomId] = new RTCPeerConnection(configuration); //asdfasdfasdfasfasdfasdfasdfasdf
+      pcs[roomId].onicecandidate = (e) => {
+        const message = {
+          type: "candidate",
+          candidate: null,
+          roomId, //asdfasdfasdfasfasdfasdfasdfasdf
+        };
+        if (e.candidate) {
+          message.candidate = e.candidate.candidate;
+          message.sdpMid = e.candidate.sdpMid;
+          message.sdpMLineIndex = e.candidate.sdpMLineIndex;
+        }
+        socket.current.emit("message", message);
       };
-      if (e.candidate) {
-        message.candidate = e.candidate.candidate;
-        message.sdpMid = e.candidate.sdpMid;
-        message.sdpMLineIndex = e.candidate.sdpMLineIndex;
-      }
-      socket.current.emit("message", message);
-    };
-    pcs[roomId].ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-    localStreams[roomId]
-      .getTracks()
-      .forEach((track) => pcs[roomId].addTrack(track, localStreams[roomId]));
-    const offer = await pcs[roomId].createOffer();
-    socket.current.emit("message", { type: "offer", sdp: offer.sdp });
-    await pcs[roomId].setLocalDescription(offer);
-    setIsCallActive(true);
-  } catch (e) {
-    console.log(e);
-  }
-}
+      pcs[roomId].ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
+      localStreams[roomId]
+        .getTracks()
+        .forEach((track) => pcs[roomId].addTrack(track, localStreams[roomId]));
+      const offer = await pcs[roomId].createOffer();
+      socket.current.emit("message", { type: "offer", sdp: offer.sdp, roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
+      await pcs[roomId].setLocalDescription(offer);
+      setIsCallActive(true);
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
-
-async function handleOffer(offer, roomId) {
-  if (pcs[roomId]) {
-    console.error("existing peerconnection");
-    return;
-  }
-  try {
-    pcs[roomId] = new RTCPeerConnection(configuration);
-    pcs[roomId].onicecandidate = (e) => {
-      const message = {
-        type: "candidate",
-        candidate: null,
+  const handleOffer = async (offer, roomId) => {
+    if (pcs[roomId]) {
+      console.error("existing peerconnection");
+      return;
+    }
+    try {
+      pcs[roomId] = new RTCPeerConnection(configuration); //asdfasdfasdfasfasdfasdfasdfasdf
+      pcs[roomId].onicecandidate = (e) => {
+        const message = {
+          type: "candidate",
+          candidate: null,
+          roomId, //asdfasdfasdfasfasdfasdfasdfasdf
+        };
+        if (e.candidate) {
+          message.candidate = e.candidate.candidate;
+          message.sdpMid = e.candidate.sdpMid;
+          message.sdpMLineIndex = e.candidate.sdpMLineIndex;
+        }
+        socket.current.emit("message", message);
       };
-      if (e.candidate) {
-        message.candidate = e.candidate.candidate;
-        message.sdpMid = e.candidate.sdpMid;
-        message.sdpMLineIndex = e.candidate.sdpMLineIndex;
-      }
-      socket.current.emit("message", message);
-    };
-    pcs[roomId].ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-    localStreams[roomId]
-      .getTracks()
-      .forEach((track) => pcs[roomId].addTrack(track, localStreams[roomId]));
-    await pcs[roomId].setRemoteDescription(offer);
+      pcs[roomId].ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
+      localStreams[roomId]
+        .getTracks()
+        .forEach((track) => pcs[roomId].addTrack(track, localStreams[roomId]));
+      await pcs[roomId].setRemoteDescription(new RTCSessionDescription(offer));
 
-    const answer = await pcs[roomId].createAnswer();
-    socket.current.emit("message", { type: "answer", sdp: answer.sdp });
-    await pcs[roomId].setLocalDescription(answer);
-  } catch (e) {
-    console.log(e);
-  }
-}
+      const answer = await pcs[roomId].createAnswer();
+      socket.current.emit("message", { type: "answer", sdp: answer.sdp, roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
+      await pcs[roomId].setLocalDescription(answer);
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
-  async function handleAnswer(answer) {
-    if (!pc) {
+  const handleAnswer = async (answer, roomId) => {
+    if (!pcs[roomId]) {
       console.error("no peerconnection");
       return;
     }
     try {
-      await pc.setRemoteDescription(answer);
+      await pcs[roomId].setRemoteDescription(new RTCSessionDescription(answer));
     } catch (e) {
       console.log(e);
     }
-  }
+  };
 
-  async function handleCandidate(candidate) {
+  const handleCandidate = async (candidate, roomId) => {
     try {
-      if (!pc) {
+      if (!pcs[roomId]) {
         console.error("no peerconnection");
         return;
       }
-      if (!candidate) {
-        await pc.addIceCandidate(null);
-      } else {
-        await pc.addIceCandidate(candidate);
+      if (candidate && candidate.candidate && candidate.sdpMid !== null && candidate.sdpMLineIndex !== null) {
+        await pcs[roomId].addIceCandidate(new RTCIceCandidate(candidate));
       }
     } catch (e) {
       console.log(e);
     }
-  }
+  };
 
-  async function hangup(roomId) {
+  const hangup = (roomId) => {
     if (pcs[roomId]) {
       pcs[roomId].close();
       pcs[roomId] = null;
@@ -139,44 +129,45 @@ async function handleOffer(offer, roomId) {
     hangupButton.current.disabled = true;
     muteAudButton.current.disabled = true;
     setIsCallActive(false);
-  }
-  
+  };
 
   useEffect(() => {
     window.addEventListener("popstate", hangB);
     socket.current = io("http://localhost:7500", { transports: ["websocket"] });
 
     socket.current.on("message", (e) => {
-      if (!localStream) {
+      if (!localStreams[e.roomId]) {
         console.log("not ready yet");
         return;
       }
+      console.log("ready");
+      
+      const { roomId } = e; //asdfasdfasdfasfasdfasdfasdfasdf
       switch (e.type) {
         case "offer":
-          handleOffer(e);
+          handleOffer(e, roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           break;
         case "answer":
-          handleAnswer(e);
+          handleAnswer(e, roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           break;
         case "candidate":
-          handleCandidate(e);
+          handleCandidate(e, roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           break;
         case "ready":
-          if (pc) {
+          if (pcs[roomId]) { //asdfasdfasdfasfasdfasdfasdfasdf
             console.log("already in call, ignoring");
             return;
           }
-          makeCall();
+          makeCall(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           break;
         case "hangup":
-          // If a 'hangup' message is received, end the call
-          if (pc) {
-            hangup();
+          if (pcs[roomId]) { //asdfasdfasdfasfasdfasdfasdfasdf
+            hangup(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           }
           break;
         case "bye":
-          if (pc) {
-            hangup();
+          if (pcs[roomId]) { //asdfasdfasdfasfasdfasdfasdfasdf
+            hangup(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           }
           break;
         default:
@@ -184,12 +175,14 @@ async function handleOffer(offer, roomId) {
           break;
       }
     });
-
+  
     hangupButton.current.disabled = true;
     muteAudButton.current.disabled = true;
+  
     return () => {
       window.removeEventListener("popstate", hangB);
     };
+  
   }, []);
 
   const [audiostate, setAudio] = useState(false);
@@ -206,20 +199,20 @@ async function handleOffer(offer, roomId) {
     } catch (err) {
       console.log(err);
     }
-  
+
     startButton.current.disabled = true;
     hangupButton.current.disabled = false;
     muteAudButton.current.disabled = false;
-  
-    socket.current.emit("message", { type: "ready" });
+
+    socket.current.emit("message", { type: "ready", roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
   };
 
-  const hangB = async () => {
-    hangup();
-    socket.current.emit("message", { type: "hangup" });
+  const hangB = async (roomId) => {
+    hangup(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
+    socket.current.emit("message", { type: "hangup", roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
   };
 
-  function muteAudio() {
+  const muteAudio = () => {
     if (audiostate) {
       localVideo.current.muted = true;
       setAudio(false);
@@ -227,7 +220,7 @@ async function handleOffer(offer, roomId) {
       localVideo.current.muted = false;
       setAudio(true);
     }
-  }
+  };
 
   const handleLogout = () => {
     console.log("Logout emitted outside function");
@@ -243,6 +236,7 @@ async function handleOffer(offer, roomId) {
       }
     });
   };
+
   const handleAccount = () => {
     navigate("/account");
   };
@@ -263,7 +257,6 @@ async function handleOffer(offer, roomId) {
               className="video-item"
               autoPlay
               playsInline
-              src=" "
             ></video>
             {/* <div className="video-label">Me</div> */}
           </div>
@@ -273,7 +266,6 @@ async function handleOffer(offer, roomId) {
               className="video-item"
               autoPlay
               playsInline
-              src=" "
             ></video>
             {/* <div className="video-label">{user.firstName}</div> */}
           </div>
@@ -283,14 +275,14 @@ async function handleOffer(offer, roomId) {
           <button
             className="btn-item btn-start"
             ref={startButton}
-            onClick={startB}
+            onClick={() => startB("some-room-id")} //asdfasdfasdfasfasdfasdfasdfasdf
           >
             <FiVideo size={25} />
           </button>
           <button
             className="btn-item btn-end"
             ref={hangupButton}
-            onClick={hangB}
+            onClick={() => hangB("some-room-id")} //asdfasdfasdfasfasdfasdfasdfasdf
           >
             <FiVideoOff size={25} />
           </button>
