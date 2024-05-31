@@ -53,8 +53,6 @@ passport.deserializeUser(function (user, cb) {
 const user = require('./Models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
-const { ClientRequest } = require('http');
 const secret = process.env.key;
 const port = process.env.PORT_FOR_BACKEND || 9000;
 const JwtStrategy = require('passport-jwt').Strategy;
