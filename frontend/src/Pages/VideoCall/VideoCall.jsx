@@ -6,7 +6,6 @@ import { FiVideo, FiVideoOff, FiMic, FiMicOff } from "react-icons/fi";
 import "./style.css";
 import Navbar from "../../Components/Navbar/Navbar";
 
-
 const configuration = {
   iceServers: [
     {
@@ -16,31 +15,26 @@ const configuration = {
   iceCandidatePoolSize: 10,
 };
 
-let pc;
-let localStream;
-let startButton;
-let hangupButton;
-let muteAudButton;
-let remoteVideo;
-let localVideo;
-
 const VideoCall = ({ setIsAuthenticated }) => {
-  startButton = useRef(null);
-  hangupButton = useRef(null);
-  muteAudButton = useRef(null);
-  localVideo = useRef(null);
-  remoteVideo = useRef(null);
+  const startButton = useRef(null);
+  const hangupButton = useRef(null);
+  const muteAudButton = useRef(null);
+  const localVideo = useRef(null);
+  const remoteVideo = useRef(null);
   const { user, setUser } = useContext(UserContext);
   const navigate = useNavigate();
   const socket = useRef();
+  const pcs = {}; // Store RTCPeerConnections for each room
+  const localStreams = {}; // Store local streams for each room
 
-  async function makeCall() {
+  const makeCall = async (roomId) => {
     try {
-      pc = new RTCPeerConnection(configuration);
-      pc.onicecandidate = (e) => {
+      pcs[roomId] = new RTCPeerConnection(configuration); //asdfasdfasdfasfasdfasdfasdfasdf
+      pcs[roomId].onicecandidate = (e) => {
         const message = {
           type: "candidate",
           candidate: null,
+          roomId, //asdfasdfasdfasfasdfasdfasdfasdf
         };
         if (e.candidate) {
           message.candidate = e.candidate.candidate;
@@ -49,30 +43,31 @@ const VideoCall = ({ setIsAuthenticated }) => {
         }
         socket.current.emit("message", message);
       };
-      pc.ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-      localStream
+      pcs[roomId].ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
+      localStreams[roomId]
         .getTracks()
-        .forEach((track) => pc.addTrack(track, localStream));
-      const offer = await pc.createOffer();
-      socket.current.emit("message", { type: "offer", sdp: offer.sdp });
-      await pc.setLocalDescription(offer);
+        .forEach((track) => pcs[roomId].addTrack(track, localStreams[roomId]));
+      const offer = await pcs[roomId].createOffer();
+      socket.current.emit("message", { type: "offer", sdp: offer.sdp, roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
+      await pcs[roomId].setLocalDescription(offer);
       setIsCallActive(true);
     } catch (e) {
       console.log(e);
     }
-  }
+  };
 
-  async function handleOffer(offer) {
-    if (pc) {
+  const handleOffer = async (offer, roomId) => {
+    if (pcs[roomId]) {
       console.error("existing peerconnection");
       return;
     }
     try {
-      pc = new RTCPeerConnection(configuration);
-      pc.onicecandidate = (e) => {
+      pcs[roomId] = new RTCPeerConnection(configuration); //asdfasdfasdfasfasdfasdfasdfasdf
+      pcs[roomId].onicecandidate = (e) => {
         const message = {
           type: "candidate",
           candidate: null,
+          roomId, //asdfasdfasdfasfasdfasdfasdfasdf
         };
         if (e.candidate) {
           message.candidate = e.candidate.candidate;
@@ -81,97 +76,98 @@ const VideoCall = ({ setIsAuthenticated }) => {
         }
         socket.current.emit("message", message);
       };
-      pc.ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
-      localStream
+      pcs[roomId].ontrack = (e) => (remoteVideo.current.srcObject = e.streams[0]);
+      localStreams[roomId]
         .getTracks()
-        .forEach((track) => pc.addTrack(track, localStream));
-      await pc.setRemoteDescription(offer);
+        .forEach((track) => pcs[roomId].addTrack(track, localStreams[roomId]));
+      await pcs[roomId].setRemoteDescription(new RTCSessionDescription(offer));
 
-      const answer = await pc.createAnswer();
-      socket.current.emit("message", { type: "answer", sdp: answer.sdp });
-      await pc.setLocalDescription(answer);
+      const answer = await pcs[roomId].createAnswer();
+      socket.current.emit("message", { type: "answer", sdp: answer.sdp, roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
+      await pcs[roomId].setLocalDescription(answer);
     } catch (e) {
       console.log(e);
     }
-  }
+  };
 
-  async function handleAnswer(answer) {
-    if (!pc) {
+  const handleAnswer = async (answer, roomId) => {
+    if (!pcs[roomId]) {
       console.error("no peerconnection");
       return;
     }
     try {
-      await pc.setRemoteDescription(answer);
+      await pcs[roomId].setRemoteDescription(new RTCSessionDescription(answer));
     } catch (e) {
       console.log(e);
     }
-  }
+  };
 
-  async function handleCandidate(candidate) {
+  const handleCandidate = async (candidate, roomId) => {
     try {
-      if (!pc) {
+      if (!pcs[roomId]) {
         console.error("no peerconnection");
         return;
       }
-      if (!candidate) {
-        await pc.addIceCandidate(null);
-      } else {
-        await pc.addIceCandidate(candidate);
+      if (candidate && candidate.candidate && candidate.sdpMid !== null && candidate.sdpMLineIndex !== null) {
+        await pcs[roomId].addIceCandidate(new RTCIceCandidate(candidate));
       }
     } catch (e) {
       console.log(e);
     }
-  }
+  };
 
-  async function hangup() {
-    if (pc) {
-      pc.close();
-      pc = null;
+  const hangup = (roomId) => {
+    if (pcs[roomId]) {
+      pcs[roomId].close();
+      pcs[roomId] = null;
     }
-    localStream.getTracks().forEach((track) => track.stop());
-    localStream = null;
+    if (localStreams[roomId]) {
+      localStreams[roomId].getTracks().forEach((track) => track.stop());
+      localStreams[roomId] = null;
+    }
     startButton.current.disabled = false;
     hangupButton.current.disabled = true;
     muteAudButton.current.disabled = true;
     setIsCallActive(false);
-  }
+  };
 
   useEffect(() => {
     window.addEventListener("popstate", hangB);
     socket.current = io("http://localhost:7500", { transports: ["websocket"] });
 
     socket.current.on("message", (e) => {
-      if (!localStream) {
+      if (!localStreams[e.roomId]) {
         console.log("not ready yet");
         return;
       }
+      console.log("ready");
+      
+      const { roomId } = e; //asdfasdfasdfasfasdfasdfasdfasdf
       switch (e.type) {
         case "offer":
-          handleOffer(e);
+          handleOffer(e, roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           break;
         case "answer":
-          handleAnswer(e);
+          handleAnswer(e, roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           break;
         case "candidate":
-          handleCandidate(e);
+          handleCandidate(e, roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           break;
         case "ready":
-          // A second tab joined. This tab will initiate a call unless in a call already.
-          if (pc) {
+          if (pcs[roomId]) { //asdfasdfasdfasfasdfasdfasdfasdf
             console.log("already in call, ignoring");
             return;
           }
-          makeCall();
+          makeCall(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           break;
         case "hangup":
-          // If a 'hangup' message is received, end the call
-          if (pc) {
-            hangup();
+          if (pcs[roomId]) { //asdfasdfasdfasfasdfasdfasdfasdf
+            hangup(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           }
           break;
         case "bye":
-          if (pc) {
-            hangup();
+          if (pcs[roomId]) { //asdfasdfasdfasfasdfasdfasdfasdf
+            hangup(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
           }
           break;
         default:
@@ -179,25 +175,27 @@ const VideoCall = ({ setIsAuthenticated }) => {
           break;
       }
     });
-
+  
     hangupButton.current.disabled = true;
     muteAudButton.current.disabled = true;
+  
     return () => {
       window.removeEventListener("popstate", hangB);
     };
+  
   }, []);
 
   const [audiostate, setAudio] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCallActive, setIsCallActive] = useState(false);
 
-  const startB = async () => {
+  const startB = async (roomId) => {
     try {
-      localStream = await navigator.mediaDevices.getUserMedia({
+      localStreams[roomId] = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: { echoCancellation: true },
       });
-      localVideo.current.srcObject = localStream;
+      localVideo.current.srcObject = localStreams[roomId];
     } catch (err) {
       console.log(err);
     }
@@ -206,15 +204,15 @@ const VideoCall = ({ setIsAuthenticated }) => {
     hangupButton.current.disabled = false;
     muteAudButton.current.disabled = false;
 
-    socket.current.emit("message", { type: "ready" });
+    socket.current.emit("message", { type: "ready", roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
   };
 
-  const hangB = async () => {
-    hangup();
-    socket.current.emit("message", { type: "hangup" });
+  const hangB = async (roomId) => {
+    hangup(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
+    socket.current.emit("message", { type: "hangup", roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
   };
 
-  function muteAudio() {
+  const muteAudio = () => {
     if (audiostate) {
       localVideo.current.muted = true;
       setAudio(false);
@@ -222,7 +220,7 @@ const VideoCall = ({ setIsAuthenticated }) => {
       localVideo.current.muted = false;
       setAudio(true);
     }
-  }
+  };
 
   const handleLogout = () => {
     console.log("Logout emitted outside function");
@@ -238,6 +236,7 @@ const VideoCall = ({ setIsAuthenticated }) => {
       }
     });
   };
+
   const handleAccount = () => {
     navigate("/account");
   };
@@ -258,7 +257,6 @@ const VideoCall = ({ setIsAuthenticated }) => {
               className="video-item"
               autoPlay
               playsInline
-              src=" "
             ></video>
             {/* <div className="video-label">Me</div> */}
           </div>
@@ -268,7 +266,6 @@ const VideoCall = ({ setIsAuthenticated }) => {
               className="video-item"
               autoPlay
               playsInline
-              src=" "
             ></video>
             {/* <div className="video-label">{user.firstName}</div> */}
           </div>
@@ -278,14 +275,14 @@ const VideoCall = ({ setIsAuthenticated }) => {
           <button
             className="btn-item btn-start"
             ref={startButton}
-            onClick={startB}
+            onClick={() => startB("some-room-id")} //asdfasdfasdfasfasdfasdfasdfasdf
           >
             <FiVideo size={25} />
           </button>
           <button
             className="btn-item btn-end"
             ref={hangupButton}
-            onClick={hangB}
+            onClick={() => hangB("some-room-id")} //asdfasdfasdfasfasdfasdfasdfasdf
           >
             <FiVideoOff size={25} />
           </button>

@@ -15,20 +15,53 @@ body{
     border-radius: 20px;
     
 }
-.message{
-    width: 35%;
-    padding: 10px;
-    margin: 17px 12px;
-    border-radius: 10px;
-    color: white;
-    word-wrap: break-word; /* Break long words */
-    white-space: pre-line; /* Preserve line breaks */
+.message {
+  position: relative;
+  width: 35%;
+  padding: 10px;
+  margin: 17px 12px;
+  border-radius: 10px;
+  color: white;
+  word-wrap: break-word;
+  white-space: pre-line;
+  opacity: 0; /* Initially hide the message */
+  transition: opacity 0.3s ease; /* Add transition for opacity */
+}
+.message:hover .timestamp {
+  opacity: 1; /* Show the timestamp on hover */
+}
+
+.message.joined {
+  color: green;
+}
+
+.message.leftchat {
+  color: red;
+}
+
+div.message.video-call {
+  color: blue !important; /* Change to the desired color */
+}
+
+
+.message.fade-in {
+  opacity: 1; /* Show the message with fade-in effect */
 }
 .container::-webkit-scrollbar{
     display: none;
 }
-.message:hover .timestamp{
-    display: block;
+
+.timestamp {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  position: absolute;
+  bottom: -20px; /* Adjust as needed to position the timestamp */
+  right: 10px; /* Adjust as needed to position the timestamp */
+  opacity: 0; /* Initially hide the timestamp */
+  transition: opacity 0.3s ease; /* Add transition for opacity */
+}
+.message:hover .timestamp {
+  opacity: 1; /* Show the timestamp on hover */
 }
 
 .left{
@@ -78,25 +111,6 @@ input:focus{
     object-fit: contain;
 }
 
-/* New addition for timestamp styling */
-.timestamp {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
-    float: right;
-    display: none;
-}
-  
-  .message.joined {
-    color: green;
-  }
-  
-  .message.leftchat {
-    color: red;
-  }
-  
-  div.message.video-call {
-    color: blue !important; /* Change to the desired color */
-  }
 
  /* Toast notification styling */
 .Toastify__toast-container {
@@ -158,4 +172,12 @@ input:focus{
   .Toastify__toast--info .answerbtn {
     margin-right: 10px;
   }
-  
+  .scroll-to-bottom {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    cursor: pointer;
+  }

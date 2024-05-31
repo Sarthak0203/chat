@@ -1,70 +1,130 @@
-const io = require('socket.io')(8000, {
-    cors: {
-        origin: "*",  // Allow all origins
-        methods: ["GET", "POST"]  // Allow GET and POST methods
-    }
-});
-const users = {};
+const express = require("express");
+const cors = require("cors");
+const http = require("http");
+const socketIo = require("socket.io");
 
-io.on('connection', socket => {
-    socket.on('new-user-joined', name => {
-        users[socket.id] = name;
-        // Send a message to the new user about the currently connected users
-        let connectedUsers = Object.values(users).map(user => user.firstName);
-        // Remove the new user's name from the list of connected users
-        const index = connectedUsers.indexOf(name.firstName);
+const app = express();
+app.use(cors());
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",  // Allow all origins
+    methods: ["GET", "POST"],  // Allow GET and POST methods
+  },
+});
+
+const PORT = 3000 || process.env.PORT;
+const users = {};
+const rooms = {};
+const userRooms = {};
+
+function generateRoomCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+io.on("connection", (socket) => {
+  console.log("Connected");
+
+  socket.on("message", (message) => {
+    const { roomId } = message;
+    if (roomId) {
+      socket.broadcast.to(roomId).emit("message", message);
+    } else {
+      socket.broadcast.emit("message", message);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Disconnected");
+    const userRoom = userRooms[socket.id];
+    if (userRoom) {
+      const roomUsers = rooms[userRoom];
+      if (roomUsers) {
+        const index = roomUsers.indexOf(socket.id);
         if (index !== -1) {
-            connectedUsers.splice(index, 1);
+          roomUsers.splice(index, 1);
+          socket.broadcast.to(userRoom).emit("left", users[socket.id]);
         }
-        // Add 'you' at the beginning of the list of connected users
-        connectedUsers = ['You'].concat(connectedUsers);
-        if (connectedUsers.length > 1) {
-            socket.emit('welcome-message', `Welcome! Users currently connected: ${connectedUsers.join(', ')}`);
-        } else {
-            socket.emit('welcome-message', 'Welcome! No other users are currently connected.');
-        }
-        // Notify other users that a new user has joined
-        socket.broadcast.emit('user-joined', name);
-        console.log('user connected');
-        
-    });
-    
-    socket.on('send', message => {
-        if (users[socket.id]) {
-            let user = users[socket.id];
-            if (user && user.firstName) {
-                socket.broadcast.emit('receive', {message: message, firstName: user.firstName})
-                console.log('message sent')
-            }
-        }
-    });
-    socket.on('disconnect', () => {
-        if (users[socket.id]) {
-            console.log('user disconnected')
-            socket.broadcast.emit('left', users[socket.id]);
-            delete users[socket.id];
-        }
-    });
-    
-    socket.on('logout', (user, ack) => {
-        socket.broadcast.emit('left', user);
-        delete users[socket.id];
-        ack();
-    });
-    socket.on('video-call-started', (user) => {
-        socket.broadcast.emit('receive', {message: `${user.firstName} started a video chat`, firstName: 'System'});
-      });
-      
-      socket.on('call-invitation', (user) => {
-        socket.broadcast.emit('incoming-call', user);
-      });
-    
-      socket.on('call-accepted', (user) => {
-        socket.broadcast.emit('call-accepted', user);
-      });
-    
-      socket.on('call-declined', (user) => {
-        socket.broadcast.emit('call-declined', user);
-      });
-    
+      }
+    }
+    delete users[socket.id];
+  });
+
+  socket.on("new-user-joined", (name) => {
+    users[socket.id] = name;
+    socket.broadcast.emit("user-joined", name);
+  });
+
+  socket.on("send", (data) => {
+    const user = users[socket.id];
+    const roomId = userRooms[socket.id];
+    if (user && roomId) {
+      socket.broadcast.to(roomId).emit("receive", { message: data.message, firstName: user.firstName });
+    }
+  });
+
+  socket.on("logout", (user, ack) => {
+    socket.broadcast.to(userRooms[socket.id]).emit("left", user);
+    delete users[socket.id];
+    ack();
+  });
+
+  socket.on("create-room", () => {
+    const roomId = generateRoomCode();
+    rooms[roomId] = [socket.id];
+    userRooms[socket.id] = roomId;
+    socket.join(roomId);
+    socket.emit("room-created", roomId);
+    console.log("Room created:", roomId);
+  });
+
+  socket.on("join-room", (roomId) => {
+    if (rooms[roomId]) {
+      rooms[roomId].push(socket.id);
+      userRooms[socket.id] = roomId;
+      socket.join(roomId);
+      socket.emit("room-joined", roomId);
+      socket.broadcast.to(roomId).emit("user-joined", users[socket.id]);
+      console.log("User joined room:", roomId);
+    } else {
+      socket.emit("room-not-found", { message: "Room does not exist" });
+    }
+  });
+
+  socket.on("leave-room", () => {
+    const roomId = userRooms[socket.id];
+    if (roomId) {
+      const index = rooms[roomId].indexOf(socket.id);
+      rooms[roomId].splice(index, 1);
+      delete userRooms[socket.id];
+      socket.leave(roomId);
+      socket.emit("left-room", roomId);
+      socket.broadcast.to(roomId).emit("left", users[socket.id]);
+      console.log("User left room:", roomId);
+    }
+  });
+
+  socket.on("video-call-started", (user, roomId) => {
+    socket.to(roomId).emit("incoming-call", users[socket.id]);
+  });
+
+  socket.on("call-invitation", (user) => {
+    socket.broadcast.to(userRooms[socket.id]).emit("incoming-call", user);
+  });
+
+  socket.on("call-accepted", (user) => {
+    socket.broadcast.to(userRooms[user.id]).emit("call-accepted", user);
+  });
+
+  socket.on("call-declined", (user) => {
+    socket.broadcast.to(userRooms[user.id]).emit("call-declined", user);
+  });
+
+  socket.on("name-change", ({ oldName, newName }) => {
+    socket.broadcast.to(userRooms[socket.id]).emit("receive", { message: `${oldName} changed their name to ${newName}`, firstName: "System" });
+  });
+});
+
+server.listen(7500, () => {
+  console.log("listening on Port 7500");
 });
