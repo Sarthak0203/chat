@@ -61,6 +61,7 @@ mongoose.connect(process.env.MongoURL)
   .then(() => console.log('Database connected successfully'))
   .catch(err => console.log('Database connection failed', err));
 
+  
 app.post('/signup', async (req, res) => {
   const { first_name, last_name, email, password } = req.body;
   try {
