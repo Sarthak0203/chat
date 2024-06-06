@@ -64,7 +64,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
   };
 
   useEffect(() => {
-    socket.current = io("http://localhost:8000");
+    socket.current = io("http://localhost:7500");
     const token = localStorage.getItem("token");
     const storedRoomCode = localStorage.getItem("roomCode"); // Retrieve stored room code
 
