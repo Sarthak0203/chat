@@ -2,9 +2,14 @@ body{
     background-color: black
 }
 
+.wrapper{
+    height: 100vh;
+
+}
+
 .container{
     max-width: 955px;
-    height: 60vh;
+    height: 80vh;
     border: 2px solid black;
     margin: auto;
     margin: auto;
@@ -15,7 +20,7 @@ body{
     border-radius: 20px;
     
 }
-.message {
+/* /* .message {
   position: relative;
   width: 35%;
   padding: 10px;
@@ -24,11 +29,11 @@ body{
   color: white;
   word-wrap: break-word;
   white-space: pre-line;
-  opacity: 0; /* Initially hide the message */
-  transition: opacity 0.3s ease; /* Add transition for opacity */
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 .message:hover .timestamp {
-  opacity: 1; /* Show the timestamp on hover */
+  opacity: 1;
 }
 
 .message.joined {
@@ -40,12 +45,12 @@ body{
 }
 
 div.message.video-call {
-  color: blue !important; /* Change to the desired color */
+  color: blue !important;
 }
 
 
 .message.fade-in {
-  opacity: 1; /* Show the message with fade-in effect */
+  opacity: 1; 
 }
 .container::-webkit-scrollbar{
     display: none;
@@ -55,14 +60,13 @@ div.message.video-call {
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.7);
   position: absolute;
-  bottom: -20px; /* Adjust as needed to position the timestamp */
-  right: 10px; /* Adjust as needed to position the timestamp */
-  opacity: 0; /* Initially hide the timestamp */
-  transition: opacity 0.3s ease; /* Add transition for opacity */
+  bottom: -20px;
+  right: 10px; 
+  opacity: 0; 
+  transition: opacity 0.3s ease; 
 }
 .message:hover .timestamp {
-  opacity: 1; /* Show the timestamp on hover */
-}
+  opacity: 1; 
 
 .left{
     float: left;
@@ -73,7 +77,7 @@ div.message.video-call {
     float: right;
     clear: both;
     background-color: rgb(104,133,255);
-}
+} */
 #send-container{
     display: flex;
     margin: auto;
