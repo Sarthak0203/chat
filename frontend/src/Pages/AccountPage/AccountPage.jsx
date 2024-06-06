@@ -14,7 +14,7 @@ const AccountPage = () => {
   const socket = useRef(null);
 
   useEffect(() => {
-    socket.current = io("http://localhost:8000");
+    socket.current = io("http://localhost:7500");
     if (userFromContext) {
       setName(userFromContext.firstName);
       setEmail(userFromContext.email);
