@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Navigate, Link, useLocation } from 'react-router-dom';
 import { UserContext } from '../../UserContextProvider';
-import './Login.css'
+import './Login.css';
 
 const Login = () => {
   const { user, setUser } = useContext(UserContext);
@@ -18,20 +18,14 @@ const Login = () => {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
     });
-    const data = await response.json(); // Parse response body as JSON
+    const data = await response.json();
     if (response.ok) {
       alert('Login Successful');
-      setUser(data.user); // Assuming the user data is in the 'user' property of the parsed JSON
-      // Store the JWT token in localStorage
+      setUser(data.user);
       localStorage.setItem('token', data.token);
-      setRedirect(true); // Set redirect to true here
+      setRedirect(true);
     } else {
-      // Handle login failure
-      if (data.error) {
-        alert(`Login Failed: ${data.error}`);
-      } else {
-        alert('Login Failed');
-      }
+      alert('Login Failed');
     }
   }
 
@@ -40,7 +34,6 @@ const Login = () => {
     const token = params.get('token');
     if (token) {
       localStorage.setItem('token', token);
-      // Fetch user data using this token and set it to the context
       fetchUserData(token);
     }
   }, [location]);
@@ -56,8 +49,8 @@ const Login = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        setUser(data.user); // Set user data in context
-        setRedirect(true); // Redirect to /chat
+        setUser(data.user); // Ensure data.user contains avatar
+        setRedirect(true);
       } else {
         alert('Failed to fetch user data');
       }
@@ -89,11 +82,10 @@ const Login = () => {
           <button type="button" class="google-sign-in-button" >
             <a href="http://localhost:9000/auth/google">Sign in with Google</a>
           </button>
-          {/* <div className="google"><i className="fab fa-google"></i>  <a href="http://localhost:9000/auth/google">Google</a></div> */}
         </div>
       </form>
     </div>
-  )
-}
+  );
+};
 
 export default Login;

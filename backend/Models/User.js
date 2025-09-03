@@ -1,25 +1,33 @@
 const mongoose = require('mongoose');
-const {schema, model} = mongoose;
 
-const userSchema = mongoose.Schema({
-    email:{
-        type:String,
-        required:true,
-        unique:false
-    },
-    password:{
-        type:String,
-        required:false,
-    },first_name:{
-        type:String,
-        required:true,
-        unique:false
-    },last_name:{
-        type:String,
-        required:true,
-        unique:false
-    },
-})
+const userSchema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  password: {
+    type: String,
+    required: function() { return !this.isOAuthUser; },
+  },
+  first_name: {
+    type: String,
+    required: true,
+  },
+  last_name: {
+    type: String,
+    required: true,
+  },
+  avatar: {
+    type: String,
+    required: function() { return !this.isOAuthUser; },
+    default: 'https://via.placeholder.com/150'
+  },
+  isOAuthUser: {
+    type: Boolean,
+    default: false,
+  },
+});
 
-const userModel = mongoose.model('Users', userSchema,);
-module.exports = userModel;
+const User = mongoose.model('User', userSchema);
+module.exports = User;

@@ -23,21 +23,21 @@ const ChatPage = ({ setIsAuthenticated }) => {
     const timestamp = `${date.getHours()}:${date.getMinutes()}`;
 
     messageElement.innerHTML = `
-      <div class="chat ${position === 'left' ? 'chat-start' : 'chat-end'}">
-        <div class="chat-image avatar">
-          <div class="w-10 rounded-full">
-            <img alt="Tailwind CSS chat bubble component" src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg" />
-          </div>
-        </div>
-        <div class="chat-header">
-          ${position === 'left' ? senderName : `${user.firstName}`}
-          <time class="text-xs opacity-50">${timestamp}</time>
-        </div>
-        <div class="chat-bubble">${message}</div>
-        <div class="chat-footer opacity-50">
-          ${position === 'left' ? 'Delivered' : `Seen at ${timestamp}`}
+    <div class="chat ${position === 'left' ? 'chat-start' : 'chat-end'}">
+      <div class="chat-image avatar">
+        <div class="w-10 rounded-full">
+          <img alt="Avatar" src=${user?.avatar || ''} />
         </div>
       </div>
+      <div class="chat-header">
+        ${position === 'left' ? senderName : `${user.firstName}`}
+        <time class="text-xs opacity-50">${timestamp}</time>
+      </div>
+      <div class="chat-bubble">${message}</div>
+      <div class="chat-footer opacity-50">
+        ${position === 'left' ? 'Delivered' : `Seen at ${timestamp}`}
+      </div>
+    </div>
     `;
 
     messageElement.classList.add("message");
@@ -130,6 +130,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
     const getname = async function (user) {
       let firstName = "";
       let email = "";
+      let avatar = "";
       if (user && user.email) {
         email = user.email;
         const response = await fetch("http://localhost:9000/name", {
@@ -140,12 +141,13 @@ const ChatPage = ({ setIsAuthenticated }) => {
         });
 
         const data = await response.json();
-        if (data && data.firstName) {
+        if (data && data.firstName && data.avatar) {
           firstName = data.firstName;
-          setUser({ firstName, email });
+          avatar = data.avatar;
+          setUser({ firstName, email, avatar });
         }
       }
-      return { firstName, email };
+      return { firstName, email, avatar };
     };
 
     const fetchUser = async () => {
@@ -164,9 +166,9 @@ const ChatPage = ({ setIsAuthenticated }) => {
         userData = await response.json();
       }
 
-      const { firstName, email } = await getname(userData);
+      const { firstName, email, avatar } = await getname(userData);
 
-      setUser({ firstName, email });
+      setUser({ firstName, email, avatar });
 
       if (firstName) {
         socket.current.emit("new-user-joined", { firstName });

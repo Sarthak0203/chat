@@ -29,12 +29,12 @@ const VideoCall = ({ setIsAuthenticated }) => {
 
   const makeCall = async (roomId) => {
     try {
-      pcs[roomId] = new RTCPeerConnection(configuration); //asdfasdfasdfasfasdfasdfasdfasdf
+      pcs[roomId] = new RTCPeerConnection(configuration); 
       pcs[roomId].onicecandidate = (e) => {
         const message = {
           type: "candidate",
           candidate: null,
-          roomId, //asdfasdfasdfasfasdfasdfasdfasdf
+          roomId, 
         };
         if (e.candidate) {
           message.candidate = e.candidate.candidate;
@@ -48,7 +48,7 @@ const VideoCall = ({ setIsAuthenticated }) => {
         .getTracks()
         .forEach((track) => pcs[roomId].addTrack(track, localStreams[roomId]));
       const offer = await pcs[roomId].createOffer();
-      socket.current.emit("message", { type: "offer", sdp: offer.sdp, roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
+      socket.current.emit("message", { type: "offer", sdp: offer.sdp, roomId }); 
       await pcs[roomId].setLocalDescription(offer);
       setIsCallActive(true);
     } catch (e) {
@@ -62,12 +62,12 @@ const VideoCall = ({ setIsAuthenticated }) => {
       return;
     }
     try {
-      pcs[roomId] = new RTCPeerConnection(configuration); //asdfasdfasdfasfasdfasdfasdfasdf
+      pcs[roomId] = new RTCPeerConnection(configuration); 
       pcs[roomId].onicecandidate = (e) => {
         const message = {
           type: "candidate",
           candidate: null,
-          roomId, //asdfasdfasdfasfasdfasdfasdfasdf
+          roomId, 
         };
         if (e.candidate) {
           message.candidate = e.candidate.candidate;
@@ -83,7 +83,7 @@ const VideoCall = ({ setIsAuthenticated }) => {
       await pcs[roomId].setRemoteDescription(new RTCSessionDescription(offer));
 
       const answer = await pcs[roomId].createAnswer();
-      socket.current.emit("message", { type: "answer", sdp: answer.sdp, roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
+      socket.current.emit("message", { type: "answer", sdp: answer.sdp, roomId }); 
       await pcs[roomId].setLocalDescription(answer);
     } catch (e) {
       console.log(e);
@@ -142,32 +142,32 @@ const VideoCall = ({ setIsAuthenticated }) => {
       }
       console.log("ready");
       
-      const { roomId } = e; //asdfasdfasdfasfasdfasdfasdfasdf
+      const { roomId } = e;
       switch (e.type) {
         case "offer":
-          handleOffer(e, roomId); //asdfasdfasdfasfasdfasdfasdfasdf
+          handleOffer(e, roomId);
           break;
         case "answer":
-          handleAnswer(e, roomId); //asdfasdfasdfasfasdfasdfasdfasdf
+          handleAnswer(e, roomId);
           break;
         case "candidate":
-          handleCandidate(e, roomId); //asdfasdfasdfasfasdfasdfasdfasdf
+          handleCandidate(e, roomId);
           break;
         case "ready":
-          if (pcs[roomId]) { //asdfasdfasdfasfasdfasdfasdfasdf
+          if (pcs[roomId]) { 
             console.log("already in call, ignoring");
             return;
           }
-          makeCall(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
+          makeCall(roomId); 
           break;
         case "hangup":
-          if (pcs[roomId]) { //asdfasdfasdfasfasdfasdfasdfasdf
-            hangup(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
+          if (pcs[roomId]) { 
+            hangup(roomId);
           }
           break;
         case "bye":
-          if (pcs[roomId]) { //asdfasdfasdfasfasdfasdfasdfasdf
-            hangup(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
+          if (pcs[roomId]) { 
+            hangup(roomId); 
           }
           break;
         default:
@@ -204,12 +204,12 @@ const VideoCall = ({ setIsAuthenticated }) => {
     hangupButton.current.disabled = false;
     muteAudButton.current.disabled = false;
 
-    socket.current.emit("message", { type: "ready", roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
+    socket.current.emit("message", { type: "ready", roomId }); 
   };
 
   const hangB = async (roomId) => {
-    hangup(roomId); //asdfasdfasdfasfasdfasdfasdfasdf
-    socket.current.emit("message", { type: "hangup", roomId }); //asdfasdfasdfasfasdfasdfasdfasdf
+    hangup(roomId);
+    socket.current.emit("message", { type: "hangup", roomId });
   };
 
   const muteAudio = () => {
@@ -275,14 +275,14 @@ const VideoCall = ({ setIsAuthenticated }) => {
           <button
             className="btn-item btn-start"
             ref={startButton}
-            onClick={() => startB("some-room-id")} //asdfasdfasdfasfasdfasdfasdfasdf
+            onClick={() => startB("some-room-id")} 
           >
             <FiVideo size={25} />
           </button>
           <button
             className="btn-item btn-end"
             ref={hangupButton}
-            onClick={() => hangB("some-room-id")} //asdfasdfasdfasfasdfasdfasdfasdf
+            onClick={() => hangB("some-room-id")} 
           >
             <FiVideoOff size={25} />
           </button>

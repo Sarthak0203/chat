@@ -1,0 +1,16 @@
+{
+  "name": "chat-app",
+  "version": "1.0.0",
+  "description": "MERN Stack Chat Application",
+  "scripts": {
+    "install-all": "cd backend && npm install --force && cd ../frontend && npm install --force  ",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\" \"npm run chat-server\" \"npm run video-server\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start",
+    "chat-server": "cd frontend/nodeServer && node index.cjs",
+    "video-server": "cd frontend/signalingServer && node index.cjs"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
