@@ -8,8 +8,8 @@ app.use(cors());
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "*",  // Allow all origins
-    methods: ["GET", "POST"],  // Allow GET and POST methods
+    origin: "*",
+    methods: ["GET", "POST"],
   },
 });
 
@@ -52,7 +52,10 @@ io.on("connection", (socket) => {
 
   socket.on("new-user-joined", (name) => {
     users[socket.id] = name;
-    socket.broadcast.emit("user-joined", name);
+    const roomId = userRooms[socket.id];
+    if (roomId) {
+      socket.broadcast.to(roomId).emit("user-joined", name);
+    }
   });
 
   socket.on("send", (data) => {
@@ -84,7 +87,7 @@ io.on("connection", (socket) => {
       userRooms[socket.id] = roomId;
       socket.join(roomId);
       socket.emit("room-joined", roomId);
-      socket.broadcast.to(roomId).emit("user-joined", users[socket.id]);
+      socket.to(roomId).emit("user-joined", users[socket.id]);
       console.log("User joined room:", roomId);
     } else {
       socket.emit("room-not-found", { message: "Room does not exist" });

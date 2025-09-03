@@ -17,34 +17,32 @@ const ChatPage = ({ setIsAuthenticated }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [roomCode, setRoomCode] = useState(null);
 
-  const append = (message, position, messageType = "", senderName = "") => {
+  const append = (message, position, messageType) => {
     const messageElement = document.createElement("div");
     const date = new Date();
     const timestamp = `${date.getHours()}:${date.getMinutes()}`;
 
     messageElement.innerHTML = `
-      <div class="chat ${position === 'left' ? 'chat-start' : 'chat-end'}">
-        <div class="chat-image avatar">
-          <div class="w-10 rounded-full">
-            <img alt="Tailwind CSS chat bubble component" src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg" />
-          </div>
-        </div>
-        <div class="chat-header">
-          ${position === 'left' ? senderName : `${user.firstName}`}
-          <time class="text-xs opacity-50">${timestamp}</time>
-        </div>
-        <div class="chat-bubble">${message}</div>
-        <div class="chat-footer opacity-50">
-          ${position === 'left' ? 'Delivered' : `Seen at ${timestamp}`}
+    <div class="chat ${position === 'left' ? 'chat-start' : 'chat-end'}">
+      <div class="chat-image avatar">
+        <div class="w-10 rounded-full">
+          <img alt="Avatar" src=${user?.avatar || ''} />
         </div>
       </div>
+      <div class="chat-header">
+        ${position === 'left' ? senderName : `${user.firstName}`}
+        <time class="text-xs opacity-50">${timestamp}</time>
+      </div>
+      <div class="chat-bubble">${message}</div>
+      <div class="chat-footer opacity-50">
+        ${position === 'left' ? 'Delivered' : `Seen at ${timestamp}`}
+      </div>
+    </div>
     `;
 
     messageElement.classList.add("message");
     messageElement.classList.add(position);
-    if (messageType) {
-      messageElement.classList.add(messageType);
-    }
+    messageElement.classList.add(messageType);
     if (messageType === "video-call") {
       messageElement.classList.add("video-call");
     }
@@ -130,6 +128,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
     const getname = async function (user) {
       let firstName = "";
       let email = "";
+      let avatar = "";
       if (user && user.email) {
         email = user.email;
         const response = await fetch("http://localhost:9000/name", {
@@ -140,12 +139,13 @@ const ChatPage = ({ setIsAuthenticated }) => {
         });
 
         const data = await response.json();
-        if (data && data.firstName) {
+        if (data && data.firstName && data.avatar) {
           firstName = data.firstName;
-          setUser({ firstName, email });
+          avatar = data.avatar;
+          setUser({ firstName, email, avatar });
         }
       }
-      return { firstName, email };
+      return { firstName, email, avatar };
     };
 
     const fetchUser = async () => {
@@ -164,9 +164,9 @@ const ChatPage = ({ setIsAuthenticated }) => {
         userData = await response.json();
       }
 
-      const { firstName, email } = await getname(userData);
+      const { firstName, email, avatar } = await getname(userData);
 
-      setUser({ firstName, email });
+      setUser({ firstName, email, avatar });
 
       if (firstName) {
         socket.current.emit("new-user-joined", { firstName });
@@ -179,26 +179,26 @@ const ChatPage = ({ setIsAuthenticated }) => {
       e.preventDefault();
       const message = messageInput.value;
       if (message.trim() !== "" && user && user.firstName) {
-        append(`${message}`, "right", "", user.firstName);
+        append(`You: ${message}`, "right");
         socket.current.emit("send", { message: message });
         messageInput.value = "";
       }
     });
 
     socket.current.on("user-joined", (data) => {
-      append(` joined the chat`, "left", "joined", data.firstName);
+      append(`${data.firstName} joined the chat`, "left", "joined");
     });
 
     socket.current.on("receive", (data) => {
-      append(`${data.message}`, "left", "", data.firstName);
+      append(`${data.firstName}: ${data.message}`, "left");
     });
 
     socket.current.on("left", (name) => {
-      append(`left the chat`, "left", "left", name.firstName);
+      append(`${name.firstName} left the chat`, "leftchat", "left");
     });
 
     socket.current.on("welcome-message", (message) => {
-      append(message, "center", "", "");
+      append(message, "center");
     });
 
     socket.current.on("incoming-call", (data) => {
@@ -245,7 +245,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
   const handleVideoCall = () => {
     if (user && user.firstName) {
       socket.current.emit("call-invitation", { firstName: user.firstName });
-      append(`${user.firstName} started a video call.`, "left", "video-call", user.firstName);
+      append(`${user.firstName} started a video call.`, "left", "video-call");
       navigate("/vc");
     }
   };

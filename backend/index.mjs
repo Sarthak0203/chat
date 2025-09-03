@@ -1,16 +1,17 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import passport from "passport";
-import session from "express-session";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import dotenv from 'dotenv';
+import passport from 'passport';
+import session from 'express-session';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import multer from 'multer';
+import cloudinary from 'cloudinary';
 import User from './Models/User.js';
-
-// Load environment variables
+import dotenv from 'dotenv';
+import { PassThrough } from 'stream';
 dotenv.config();
 
 const app = express();
@@ -32,6 +33,16 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 passport.use(
   new GoogleStrategy(
@@ -62,18 +73,57 @@ mongoose.connect(process.env.REACT_APP_MongoURL)
   .then(() => console.log('Database connected successfully'))
   .catch(err => console.log('Database connection failed', err));
 
-app.post('/signup', async (req, res) => {
-  const { first_name, last_name, email, password } = req.body;
-  try {
-    const salt = bcrypt.genSaltSync(10);
-    const hashedPassword = bcrypt.hashSync(password, salt);
-    const userdoc = await User.create({ email, password: hashedPassword, first_name, last_name });
-    res.send({ userdoc });
-  } catch (e) {
-    console.log(e.stack);
-    res.status(400).send('An error occurred while creating the user');
-  }
+  app.post('/signup', upload.single('avatar'), async (req, res) => {
+    const { first_name, last_name, email, password } = req.body;
+    const avatar = req.file;
+
+    try {
+        console.log("Received signup request:", { first_name, last_name, email });
+
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = bcrypt.hashSync(password, salt);
+
+        if (!avatar) {
+            return res.status(400).send('Avatar image is required');
+        }
+
+        const uploadResponse = await cloudinary.v2.uploader.upload_stream(
+            { folder: 'avatars' },
+            async (error, result) => {
+                if (error) {
+                    console.error("Error uploading image to Cloudinary:", error);
+                    return res.status(500).send('An error occurred while uploading the image');
+                }
+
+                try {
+                    const user = new User({
+                        email,
+                        password: hashedPassword,
+                        first_name,
+                        last_name,
+                        avatar: result.secure_url,
+                    });
+
+                    await user.save();
+                    console.log("User created successfully:", user);
+                    res.status(200).send({ user });
+                } catch (dbError) {
+                    console.error("Error saving user to the database:", dbError);
+                    res.status(500).send('An error occurred while creating the user');
+                }
+            }
+        );
+
+        const bufferStream = new PassThrough();
+        bufferStream.end(avatar.buffer);
+        bufferStream.pipe(uploadResponse);
+
+    } catch (e) {
+        console.error("Unexpected error during signup:", e.message);
+        res.status(500).send('An error occurred while creating the user');
+    }
 });
+
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -130,6 +180,8 @@ app.get(
           email: req.user.emails[0].value,
           first_name: req.user.name.givenName,
           last_name: req.user.name.familyName,
+          isOAuthUser: true,
+          avatar: req.user.photos && req.user.photos[0] ? req.user.photos[0].value : 'https://via.placeholder.com/150'
         });
       }
 
@@ -138,7 +190,7 @@ app.get(
           console.error(`Error signing JWT token: ${err.message}`);
           return res.status(500).send("Server error");
         }
-        res.redirect(`http://localhost:3000/chat?token=${token}`);
+        res.redirect(`http://localhost:5173/chat?token=${token}`);
       });
     } catch (error) {
       console.error(`Error in /auth/google/callback: ${error.message}`);
@@ -151,7 +203,7 @@ app.post('/name', async (req, res) => {
   const { email } = req.body;
   const userdoc = await User.findOne({ email });
   if (userdoc) {
-    return res.status(200).json({ firstName: userdoc.first_name, email: userdoc.email });
+    return res.status(200).json({ firstName: userdoc.first_name, email: userdoc.email, avatar: userdoc.avatar});
   } else {
     return res.status(404).json({ error: 'User not found' });
   }

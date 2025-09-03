@@ -21,8 +21,7 @@ export const UserContextProvider = ({ children }) => {
   useEffect(() => {
     if (!loading) {
       const token = localStorage.getItem('token');
-      if (token) {
-        try{
+      if (token && user && user.email) {
         fetch('http://localhost:9000/name', {
           method: 'POST',
           headers: {
@@ -34,13 +33,10 @@ export const UserContextProvider = ({ children }) => {
         .then(response => response.json())
         .then(data => {
           if (data.firstName) {
-            setUser({ firstName: data.firstName, email: data.email });
+            setUser({ firstName: data.firstName, email: data.email, avatar: data.avatar });
           }
-        });
-      }
-      catch(err){
-        console.log(err)
-      }
+        })
+        .catch(err => console.log(err));
       }
     }
   }, [loading]);
