@@ -17,7 +17,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [roomCode, setRoomCode] = useState(null);
 
-  const append = (message, position, messageType = "", senderName = "") => {
+  const append = (message, position, messageType) => {
     const messageElement = document.createElement("div");
     const date = new Date();
     const timestamp = `${date.getHours()}:${date.getMinutes()}`;
@@ -42,9 +42,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
 
     messageElement.classList.add("message");
     messageElement.classList.add(position);
-    if (messageType) {
-      messageElement.classList.add(messageType);
-    }
+    messageElement.classList.add(messageType);
     if (messageType === "video-call") {
       messageElement.classList.add("video-call");
     }
@@ -181,26 +179,26 @@ const ChatPage = ({ setIsAuthenticated }) => {
       e.preventDefault();
       const message = messageInput.value;
       if (message.trim() !== "" && user && user.firstName) {
-        append(`${message}`, "right", "", user.firstName);
+        append(`You: ${message}`, "right");
         socket.current.emit("send", { message: message });
         messageInput.value = "";
       }
     });
 
     socket.current.on("user-joined", (data) => {
-      append(` joined the chat`, "left", "joined", data.firstName);
+      append(`${data.firstName} joined the chat`, "left", "joined");
     });
 
     socket.current.on("receive", (data) => {
-      append(`${data.message}`, "left", "", data.firstName);
+      append(`${data.firstName}: ${data.message}`, "left");
     });
 
     socket.current.on("left", (name) => {
-      append(`left the chat`, "left", "left", name.firstName);
+      append(`${name.firstName} left the chat`, "leftchat", "left");
     });
 
     socket.current.on("welcome-message", (message) => {
-      append(message, "center", "", "");
+      append(message, "center");
     });
 
     socket.current.on("incoming-call", (data) => {
@@ -247,7 +245,7 @@ const ChatPage = ({ setIsAuthenticated }) => {
   const handleVideoCall = () => {
     if (user && user.firstName) {
       socket.current.emit("call-invitation", { firstName: user.firstName });
-      append(`${user.firstName} started a video call.`, "left", "video-call", user.firstName);
+      append(`${user.firstName} started a video call.`, "left", "video-call");
       navigate("/vc");
     }
   };
